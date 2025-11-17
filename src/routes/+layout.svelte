@@ -9,11 +9,11 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 <div>
-	<div class="flex min-h-8 justify-around py-2 text-3xl font-bold uppercase">
+	<div class="flex min-h-8 justify-around bg-white py-2 text-3xl font-bold uppercase">
 		<a href="/">home</a>
 		<a href="/world">world</a>
 		<a href="/ores">ore</a>
-		<a href="/alloys">alloy</a>
+		<a href="/alloys">ore</a>
 	</div>
 	{@render children()}
 </div>

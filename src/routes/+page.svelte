@@ -127,11 +127,18 @@
 	function autohammerize() {
 		let bestPath: number[] | null;
 		if (toReach[0] != toReach[1]) {
-			const paths = [{name: "bp0", value: bfs(toReach[0])}, {name: "bp1", value: bfs(toReach[1])}, {name: "bp2", value: bfs(toReach[2])}]
-			bestPath = paths.filter(e => Array.isArray(e.value)).sort((a,b) => a.value!.length - b.value!.length)[0].value ?? null;
-		} else bestPath = bfs(toReach[0])
-		if (bestPath != null) queue = bestPath
-		else clearQueue()
+			const paths = [
+				{ name: 'bp0', value: bfs(toReach[0]) },
+				{ name: 'bp1', value: bfs(toReach[1]) },
+				{ name: 'bp2', value: bfs(toReach[2]) }
+			];
+			bestPath =
+				paths
+					.filter((e) => Array.isArray(e.value))
+					.sort((a, b) => a.value!.length - b.value!.length)[0].value ?? null;
+		} else bestPath = bfs(toReach[0]);
+		if (bestPath != null) queue = bestPath;
+		else clearQueue();
 	}
 
 	function bfs(target: number): number[] | null {
@@ -170,7 +177,7 @@
 	});
 </script>
 
-<main class="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-gray-800">
+<main class="flex min-h-screen w-screen flex-col items-center gap-4 bg-gray-800 py-4">
 	<!-- Numbers -->
 	<section
 		class="flex max-h-24 min-h-24 max-w-[30%] min-w-[30%] flex-col justify-around rounded-2xl bg-white py-2"
@@ -338,7 +345,7 @@
 	</section>
 
 	<!-- pad -->
-	<section class="rounded-2xl bg-white p-8">
+	<section class="relative rounded-2xl bg-white p-8">
 		<div class="flex justify-between">
 			<label class="flex items-center justify-between gap-2">
 				End point:
@@ -430,13 +437,8 @@
 			</div>
 		</div>
 
-		<div class="flex justify-center pt-4">
-			<button
-				class="border-2 border-gray-900 bg-gray-300 px-8 py-2 font-bold"
-				onclick={autohammerize}
-			>
-				AUTOHAMMER
-			</button>
+		<div class="absolute right-3 bottom-2 cursor-pointer rounded border p-0 text-xs">
+			<button class="text-xs" onclick={autohammerize}> 🔨 </button>
 		</div>
 	</section>
 	<div class="w-1/4">
