@@ -306,7 +306,16 @@
 					type="number"
 					min="0"
 					max="160"
-					bind:value={endPoint}
+					bind:value={
+						() => current,
+						(v) => {
+							if (current > 160) {
+								current = 160;
+								return;
+							}
+							current = v;
+						}
+					}
 				/>
 			</label>
 			<div>
@@ -327,7 +336,7 @@
 				<section>
 					<select class="cursor-pointer rounded" bind:value={finishHits.last}>
 						{#each [0, -1, -15, 2, 7, 13, 16] as hit}
-							<option value={hit}>{!hit ? 'none' : hit}</option>
+							<option value={hit}>{hit === 0 ? 'none' : hit === -1 ? 'hit' : hit}</option>
 						{/each}
 					</select>
 				</section>
@@ -337,7 +346,7 @@
 				<section>
 					<select class="cursor-pointer rounded" bind:value={finishHits.secondLast}>
 						{#each [0, -1, -15, 2, 7, 13, 16] as hit}
-							<option value={hit}>{!hit ? 'none' : hit}</option>
+							<option value={hit}>{hit === 0 ? 'none' : hit === -1 ? 'hit' : hit}</option>
 						{/each}
 					</select>
 				</section>
@@ -347,7 +356,7 @@
 				<section>
 					<select class="cursor-pointer rounded" bind:value={finishHits.thirdLast}>
 						{#each [0, -1, -15, 2, 7, 13, 16] as hit}
-							<option value={hit}>{!hit ? 'none' : hit}</option>
+							<option value={hit}>{hit === 0 ? 'none' : hit === -1 ? 'hit' : hit}</option>
 						{/each}
 					</select>
 				</section>
