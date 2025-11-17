@@ -81,12 +81,12 @@
 	}
 </script>
 
-<svelte:window {onkeydown} />
+<svelte:window onkeydown={editing.editing ? null : onkeydown} />
 
 {#if editing.editing}
 	{@const item = editing.item}
 	{#if item}
-		{(editing.path = item.path)}
+		<!-- {(editing.path = item.path)} -->
 		<div
 			class="absolute top-0 left-0 z-40 flex h-screen w-screen items-center justify-center bg-gray-950/80 text-black"
 		>
