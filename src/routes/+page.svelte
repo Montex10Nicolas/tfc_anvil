@@ -308,12 +308,15 @@
 					max="160"
 					bind:value={
 						() => current,
-						(v) => {
-							if (current > 160) {
+						(value) => {
+							if (value > 160) {
 								current = 160;
 								return;
+							} else if (value < 0) {
+								current = 0;
+								return;
 							}
-							current = v;
+							current = value;
 						}
 					}
 				/>
@@ -372,7 +375,7 @@
 				{/each}
 			</div>
 			<div class="flex min-w-[150px] flex-col">
-				<p class="text-center text-7xl font-bold">{current}</p>
+				<p class="text-center text-7xl font-bold">{current ?? 0}</p>
 				<p class="flex flex-col text-center text-lg font-medium">
 					{queue.length}<span class="text-xs font-light uppercase">Steps</span>
 				</p>
