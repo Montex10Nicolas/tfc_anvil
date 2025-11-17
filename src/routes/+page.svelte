@@ -134,8 +134,8 @@
 	function bfs(target: number): number[] | null {
 		const moves = [-3, -6, -9, -15, +2, +7, +13, +16];
 
-		const MIN = -30;
-		const MAX = target + 32;
+		const MIN = 0; // prevents moves that break the item
+		const MAX = target + 16; // let the bfs go a bit over
 
 		const queue: Array<{ value: number; path: number[] }> = [];
 		const visited = new Set<number>();
