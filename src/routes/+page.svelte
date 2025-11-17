@@ -364,7 +364,7 @@
 				last
 				<section>
 					<select class="cursor-pointer rounded" bind:value={finishHits.last}>
-						{#each [0, -1, -15, 2, 7, 13, 16] as hit}
+						{#each [0, -3, -6, -9, -15, 2, 7, 13, 16] as hit}
 							<option value={hit}>{!hit ? 'none' : hit}</option>
 						{/each}
 					</select>
@@ -374,7 +374,7 @@
 				second last
 				<section>
 					<select class="cursor-pointer rounded" bind:value={finishHits.secondLast}>
-						{#each [0, -1, -15, 2, 7, 13, 16] as hit}
+						{#each [0, -3, -6, -9, -15, 2, 7, 13, 16] as hit}
 							<option value={hit}>{!hit ? 'none' : hit}</option>
 						{/each}
 					</select>
@@ -384,7 +384,7 @@
 				third last
 				<section>
 					<select class="cursor-pointer rounded" bind:value={finishHits.thirdLast}>
-						{#each [0, -1, -15, 2, 7, 13, 16] as hit}
+						{#each [0, -3, -6, -9, -15, 2, 7, 13, 16] as hit}
 							<option value={hit}>{!hit ? 'none' : hit}</option>
 						{/each}
 					</select>
