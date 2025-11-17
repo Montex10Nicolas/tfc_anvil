@@ -1,6 +1,6 @@
 import { command, form, query } from "$app/server";
 import { db } from "$lib/server/db";
-import { itemDB, metalGroupsDB, startingMatirial, worldDB } from "$lib/server/db/schema";
+import { itemDB, metalGroupsDB, startingMaterial, worldDB } from "$lib/server/db/schema";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
@@ -41,6 +41,6 @@ export const removeItem = command((z.string()), async (itemID) => {
 });
 
 export const getMaterials = query(async () => {
-  const materials = await db.select().from(startingMatirial);
+  const materials = await db.select().from(startingMaterial);
   return materials;
 })

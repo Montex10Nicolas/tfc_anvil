@@ -17,10 +17,10 @@ export const itemDB = sqliteTable('item', {
   metal_id: text('metal_id').references(() => metalGroupsDB.id),
   world_id: text('world_id').references(() => worldDB.id),
   path: text('path', { mode: "json" }).notNull().$type<number[]>().default(sql`(json_array())`),
-  startingMaterial: text('starting_material_id').references(() => startingMatirial.id).default("e2101ff5-7557-4ffd-9643-83b88cada258")
+  startingMaterial: text('starting_material_id').references(() => startingMaterial.id).default("e2101ff5-7557-4ffd-9643-83b88cada258")
 });
 
-export const startingMatirial = sqliteTable("startingMaterial", {
+export const startingMaterial = sqliteTable("startingMaterial", {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name'),
   inIngots: integer('inIngots'),
