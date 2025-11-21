@@ -2,6 +2,8 @@
 	import type { ItemDBSelect } from '$lib/server/db/schema.js';
 	import { onClickOutside } from 'runed';
 	import { removeItem, updateItem } from '../../../../data.remote';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { size } from 'zod';
 
 	const { data } = $props();
 	const {
@@ -46,16 +48,34 @@
 			});
 		}
 
-		if (filter === '') return arr;
+		let finalArray: typeof items = [];
+		for (const item of arr) {
+			if (!pinnedID.has(item.id)) {
+				finalArray.push(item);
+			}
+		}
 
-		let a = arr.filter((item) => {
+		if (filter === '') return finalArray;
+
+		let filtered = finalArray.filter((item) => {
 			if (item.name.toLowerCase().includes(filter.toLowerCase())) {
 				return item;
 			}
 		});
-		return a;
+
+		return filtered;
 	});
 
+	let pinnedID = new SvelteSet<string>();
+	let pinned = $derived.by(() => {
+		let arr: typeof items = [];
+		for (const item of items) {
+			if (pinnedID.has(item.id)) {
+				arr.push(item);
+			}
+		}
+		return arr;
+	});
 	function onkeydown(
 		event: KeyboardEvent & {
 			currentTarget: EventTarget & Window;
@@ -169,6 +189,80 @@
 		<p class="text-lg font-bold">{filter}</p>
 	</div>
 
+	<!-- Pinned -->
+	{#if pinnedID.size}
+		{@const size = pinnedID.size}
+		<div class="m-4">
+			<h3 class="my-2 rounded bg-sky-600 p-3 text-xl">Pinned:</h3>
+			<div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
+				{#each pinned as { id: itemID, name, path, inputItemName, world_id, metal_id }}
+					<div class="rounded-2xl bg-white p-6">
+						<div>
+							<div class="flex justify-between">
+								<p class="text-lg font-bold capitalize">{name} {metalName}</p>
+								<div>
+									<button
+										class="cursor-pointer"
+										onclick={() => {
+											pinnedID.delete(itemID);
+										}}>㧂</button
+									>
+									<button
+										class="cursor-pointer"
+										onclick={() =>
+											(editing = {
+												item: {
+													id: itemID,
+													name,
+													path,
+													inputItemName,
+													world_id,
+													metal_id
+												},
+												editing: true,
+												path: path
+											})}>✏️</button
+									>
+									<button
+										class="cursor-pointer"
+										onclick={async () => {
+											await removeItem(itemID);
+										}}
+									>
+										❌
+									</button>
+								</div>
+							</div>
+
+							<div class="flex w-[80%] flex-wrap gap-1 text-lg">
+								{#each path as value}
+									<p class="">{value}</p>
+								{/each}
+								<p>({path.reduce((accumulator, currentValue) => accumulator + currentValue, 0)})</p>
+							</div>
+							<div class="flex justify-between">
+								<p class="text-2xl font-black">
+									{[...path]
+										.slice(
+											0,
+											path.findIndex((value, index) => {
+												if (value !== 16) return index;
+											})
+										)
+										.reduce((acc, cur) => acc + cur, 0)}
+								</p>
+								<p class="text-2xl font-black">
+									{inputItemName}
+								</p>
+							</div>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+		<hr class="mt-4 min-h-4 bg-amber-400" />
+	{/if}
+
 	<div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
 		{#each sorted as { metal_id, world_id, name, path, inputItemName, id: itemID }, index}
 			{#if !hideArray[index]}
@@ -179,13 +273,10 @@
 							<div>
 								<button
 									class="cursor-pointer"
-									onclick={async () => {
-										hideArray[index] = true;
-										await removeItem(itemID);
-									}}
+									onclick={() => {
+										pinnedID.add(itemID);
+									}}>📌</button
 								>
-									❌
-								</button>
 								<button
 									class="cursor-pointer"
 									onclick={() =>
@@ -202,6 +293,15 @@
 											path: path
 										})}>✏️</button
 								>
+								<button
+									class="cursor-pointer"
+									onclick={async () => {
+										hideArray[index] = true;
+										await removeItem(itemID);
+									}}
+								>
+									❌
+								</button>
 							</div>
 						</div>
 
