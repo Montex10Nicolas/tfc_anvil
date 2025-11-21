@@ -203,12 +203,6 @@
 								<div>
 									<button
 										class="cursor-pointer"
-										onclick={() => {
-											pinnedID.delete(itemID);
-										}}>㧂</button
-									>
-									<button
-										class="cursor-pointer"
 										onclick={() =>
 											(editing = {
 												item: {
@@ -225,8 +219,8 @@
 									>
 									<button
 										class="cursor-pointer"
-										onclick={async () => {
-											await removeItem(itemID);
+										onclick={() => {
+											pinnedID.delete(itemID);
 										}}
 									>
 										❌
@@ -236,7 +230,7 @@
 
 							<div class="flex w-[80%] flex-wrap gap-1 text-lg">
 								{#each path as value}
-									<p class="">{value}</p>
+									<p>{value}</p>
 								{/each}
 								<p>({path.reduce((accumulator, currentValue) => accumulator + currentValue, 0)})</p>
 							</div>
