@@ -3,7 +3,6 @@
 	import { onClickOutside } from 'runed';
 	import { removeItem, updateItem } from '../../../../data.remote';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { size } from 'zod';
 
 	const { data } = $props();
 	const {
@@ -26,6 +25,7 @@
 
 	let filter = $state('');
 	let sortInput = $state('');
+	let groupped = $state(false);
 
 	onClickOutside(
 		() => modal,
@@ -33,6 +33,8 @@
 			editing.editing = false;
 		}
 	);
+
+	let pinnedID = new SvelteSet<string>();
 
 	let sorted = $derived.by(() => {
 		let arr = items;
@@ -66,7 +68,6 @@
 		return filtered;
 	});
 
-	let pinnedID = new SvelteSet<string>();
 	let pinned = $derived.by(() => {
 		let arr: typeof items = [];
 		for (const item of items) {
@@ -108,6 +109,72 @@
 </script>
 
 <svelte:window onkeydown={editing.editing ? null : onkeydown} />
+
+{#snippet displayItem(item: (typeof items)[0], index: number)}
+	{@const { name, id: itemID, inputItemName, metal_id, path, world_id } = item}
+	<div class="rounded-2xl bg-white p-6">
+		<div>
+			<div class="flex justify-between">
+				<p class="text-lg font-bold capitalize">{name} {metalName}</p>
+				<div>
+					<button
+						class="cursor-pointer"
+						onclick={() => {
+							pinnedID.add(itemID);
+						}}>📌</button
+					>
+					<button
+						class="cursor-pointer"
+						onclick={() =>
+							(editing = {
+								item: {
+									id: itemID,
+									name,
+									path,
+									inputItemName,
+									world_id,
+									metal_id
+								},
+								editing: true,
+								path: path
+							})}>✏️</button
+					>
+					<button
+						class="cursor-pointer"
+						onclick={async () => {
+							hideArray[index] = true;
+							await removeItem(itemID);
+						}}
+					>
+						❌
+					</button>
+				</div>
+			</div>
+
+			<div class="flex w-[80%] flex-wrap gap-1 text-lg">
+				{#each path as value}
+					<p class="">{value}</p>
+				{/each}
+				<p>({path.reduce((accumulator, currentValue) => accumulator + currentValue, 0)})</p>
+			</div>
+			<div class="flex justify-between">
+				<p class="text-2xl font-black">
+					{[...path]
+						.slice(
+							0,
+							path.findIndex((value, index) => {
+								if (value !== 16) return index;
+							})
+						)
+						.reduce((acc, cur) => acc + cur, 0)}
+				</p>
+				<p class="text-2xl font-black">
+					{inputItemName}
+				</p>
+			</div>
+		</div>
+	</div>
+{/snippet}
 
 {#if editing.editing}
 	{@const item = editing.item}
@@ -187,6 +254,18 @@
 		</label>
 		<div class="min-h-8 w-1 border bg-black"></div>
 		<p class="text-lg font-bold">{filter}</p>
+		<div class="flex gap-8">
+			<select>
+				<option value="">Group by Input</option>
+				{#each inputItems as value}
+					<option>{value.name}</option>
+				{/each}
+			</select>
+			<label for="" class="flex items-center gap-2">
+				<p>Groups</p>
+				<input type="checkbox" bind:checked={groupped} />
+			</label>
+		</div>
 	</div>
 
 	<!-- Pinned -->
@@ -257,80 +336,40 @@
 		<hr class="mt-4 min-h-4 bg-amber-400" />
 	{/if}
 
-	<div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
-		{#each sorted as { metal_id, world_id, name, path, inputItemName, id: itemID }, index}
-			{#if !hideArray[index]}
-				<div class="rounded-2xl bg-white p-6">
-					<div>
-						<div class="flex justify-between">
-							<p class="text-lg font-bold capitalize">{name} {metalName}</p>
-							<div>
-								<button
-									class="cursor-pointer"
-									onclick={() => {
-										pinnedID.add(itemID);
-									}}>📌</button
-								>
-								<button
-									class="cursor-pointer"
-									onclick={() =>
-										(editing = {
-											item: {
-												id: itemID,
-												name,
-												path,
-												inputItemName,
-												world_id,
-												metal_id
-											},
-											editing: true,
-											path: path
-										})}>✏️</button
-								>
-								<button
-									class="cursor-pointer"
-									onclick={async () => {
-										hideArray[index] = true;
-										await removeItem(itemID);
-									}}
-								>
-									❌
-								</button>
-							</div>
-						</div>
-
-						<div class="flex w-[80%] flex-wrap gap-1 text-lg">
-							{#each path as value}
-								<p class="">{value}</p>
-							{/each}
-							<p>({path.reduce((accumulator, currentValue) => accumulator + currentValue, 0)})</p>
-						</div>
-						<div class="flex justify-between">
-							<p class="text-2xl font-black">
-								{[...path]
-									.slice(
-										0,
-										path.findIndex((value, index) => {
-											if (value !== 16) return index;
-										})
-									)
-									.reduce((acc, cur) => acc + cur, 0)}
-							</p>
-							<p class="text-2xl font-black">
-								{inputItemName}
-							</p>
-						</div>
-					</div>
+	{#if !groupped}
+		<div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
+			{#each sorted as item, index}
+				{#if !hideArray[index]}
+					{@render displayItem(item, index)}
+				{/if}
+			{/each}
+			<a href="/?world={world_id}&metal={metal_id}">
+				<div class="relative flex h-full items-center gap-2 rounded-2xl bg-sky-300 p-6">
+					<span class="text-4xl">🆕</span>
+					<p class="text-2xl font-bold">Create a new one</p>
 				</div>
-			{/if}
-		{/each}
-		<a href="/?world={world_id}&metal={metal_id}">
-			<div class="relative flex h-full items-center gap-2 rounded-2xl bg-sky-300 p-6">
-				<span class="text-4xl">🆕</span>
-				<p class="text-2xl font-bold">Create a new one</p>
+			</a>
+		</div>
+	{:else}
+		{#each inputItems as value}
+			<h1>{value.name}</h1>
+			<div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
+				{#each sorted.filter((v) => {
+					return v.inputItemName === value.name;
+				}) as item, index}
+					{#if !hideArray[index]}
+						{@render displayItem(item, index)}
+					{/if}
+				{/each}
+				<a href="/?world={world_id}&metal={metal_id}">
+					<div class="relative flex h-full items-center gap-2 rounded-2xl bg-sky-300 p-6">
+						<span class="text-4xl">🆕</span>
+						<p class="text-2xl font-bold">Create a new one</p>
+					</div>
+				</a>
 			</div>
-		</a>
-	</div>
+		{/each}
+	{/if}
 </main>
 
 <style>
