@@ -49,7 +49,7 @@
 		if (filter === '') return arr;
 
 		let a = arr.filter((item) => {
-			if (item.name.toLowerCase().startsWith(filter.toLowerCase())) {
+			if (item.name.toLowerCase().includes(filter.toLowerCase())) {
 				return item;
 			}
 		});
@@ -61,7 +61,7 @@
 			currentTarget: EventTarget & Window;
 		}
 	) {
-		const { key } = event;
+		const { key, ctrlKey } = event;
 		const uglyKeys = ['Control', 'Shift'];
 
 		for (const keys of uglyKeys) {
@@ -74,6 +74,10 @@
 		}
 
 		if (key.toLowerCase() === 'backspace') {
+			if (ctrlKey) {
+				filter = '';
+				return;
+			}
 			let temp = filter.split('');
 			temp.splice(temp.length - 1, 1);
 			filter = temp.join('');
