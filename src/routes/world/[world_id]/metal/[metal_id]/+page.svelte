@@ -25,7 +25,7 @@
 
 	let filter = $state('');
 	let sortInput = $state('');
-	let groupped = $state(false);
+	let groupped = $state(true);
 
 	onClickOutside(
 		() => modal,
@@ -110,19 +110,29 @@
 
 <svelte:window onkeydown={editing.editing ? null : onkeydown} />
 
-{#snippet displayItem(item: (typeof items)[0], index: number)}
+{#snippet displayItem({
+	item,
+	index = 0,
+	isPinned
+}: {
+	item: (typeof items)[0];
+	index?: number;
+	isPinned?: boolean;
+})}
 	{@const { name, id: itemID, inputItemName, metal_id, path, world_id } = item}
 	<div class="rounded-2xl bg-white p-6">
 		<div>
 			<div class="flex justify-between">
 				<p class="text-lg font-bold capitalize">{name} {metalName}</p>
 				<div>
-					<button
-						class="cursor-pointer"
-						onclick={() => {
-							pinnedID.add(itemID);
-						}}>📌</button
-					>
+					{#if !isPinned}
+						<button
+							class="cursor-pointer"
+							onclick={() => {
+								pinnedID.add(itemID);
+							}}>📌</button
+						>
+					{/if}
 					<button
 						class="cursor-pointer"
 						onclick={() =>
@@ -142,8 +152,12 @@
 					<button
 						class="cursor-pointer"
 						onclick={async () => {
-							hideArray[index] = true;
-							await removeItem(itemID);
+							if (isPinned) {
+								pinnedID.delete(itemID);
+							} else {
+								hideArray[index] = true;
+								await removeItem(itemID);
+							}
 						}}
 					>
 						❌
@@ -153,7 +167,7 @@
 
 			<div class="flex w-[80%] flex-wrap gap-1 text-lg">
 				{#each path as value}
-					<p class="">{value}</p>
+					<p>{value}</p>
 				{/each}
 				<p>({path.reduce((accumulator, currentValue) => accumulator + currentValue, 0)})</p>
 			</div>
@@ -252,95 +266,39 @@
 				{/each}
 			</select>
 		</label>
-		<div class="min-h-8 w-1 border bg-black"></div>
-		<p class="text-lg font-bold">{filter}</p>
 		<div class="flex gap-8">
-			<select>
-				<option value="">Group by Input</option>
-				{#each inputItems as value}
-					<option>{value.name}</option>
-				{/each}
-			</select>
-			<label for="" class="flex items-center gap-2">
-				<p>Groups</p>
-				<input type="checkbox" bind:checked={groupped} />
+			<label class="flex flex-col items-center gap-2">
+				<p>Groupped</p>
+				<input
+					type="checkbox"
+					class="min-h-8 w-full cursor-pointer rounded"
+					bind:checked={groupped}
+				/>
 			</label>
 		</div>
+		<div class="h-32 max-h-12 w-1 border bg-black"></div>
+		<p class="text-lg font-bold">{filter}</p>
 	</div>
 
 	<!-- Pinned -->
 	{#if pinnedID.size}
 		{@const size = pinnedID.size}
 		<div class="m-4">
-			<h3 class="my-2 rounded bg-sky-600 p-3 text-xl">Pinned:</h3>
+			<h3 class="my-2 rounded bg-sky-600 p-3 text-xl font-bold text-white">Pinned</h3>
 			<div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
-				{#each pinned as { id: itemID, name, path, inputItemName, world_id, metal_id }}
-					<div class="rounded-2xl bg-white p-6">
-						<div>
-							<div class="flex justify-between">
-								<p class="text-lg font-bold capitalize">{name} {metalName}</p>
-								<div>
-									<button
-										class="cursor-pointer"
-										onclick={() =>
-											(editing = {
-												item: {
-													id: itemID,
-													name,
-													path,
-													inputItemName,
-													world_id,
-													metal_id
-												},
-												editing: true,
-												path: path
-											})}>✏️</button
-									>
-									<button
-										class="cursor-pointer"
-										onclick={() => {
-											pinnedID.delete(itemID);
-										}}
-									>
-										❌
-									</button>
-								</div>
-							</div>
-
-							<div class="flex w-[80%] flex-wrap gap-1 text-lg">
-								{#each path as value}
-									<p>{value}</p>
-								{/each}
-								<p>({path.reduce((accumulator, currentValue) => accumulator + currentValue, 0)})</p>
-							</div>
-							<div class="flex justify-between">
-								<p class="text-2xl font-black">
-									{[...path]
-										.slice(
-											0,
-											path.findIndex((value, index) => {
-												if (value !== 16) return index;
-											})
-										)
-										.reduce((acc, cur) => acc + cur, 0)}
-								</p>
-								<p class="text-2xl font-black">
-									{inputItemName}
-								</p>
-							</div>
-						</div>
-					</div>
+				{#each pinned as item, index}
+					{@render displayItem({ item, index, isPinned: true })}
 				{/each}
 			</div>
 		</div>
-		<hr class="mt-4 min-h-4 bg-amber-400" />
+		<hr class="mx-4 my-4 mt-4 min-h-4 bg-amber-400" />
 	{/if}
 
 	{#if !groupped}
 		<div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
 			{#each sorted as item, index}
 				{#if !hideArray[index]}
-					{@render displayItem(item, index)}
+					{@render displayItem({ item, index })}
 				{/if}
 			{/each}
 			<a href="/?world={world_id}&metal={metal_id}">
@@ -352,22 +310,29 @@
 		</div>
 	{:else}
 		{#each inputItems as value}
-			<h1>{value.name}</h1>
-			<div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
-				{#each sorted.filter((v) => {
-					return v.inputItemName === value.name;
-				}) as item, index}
-					{#if !hideArray[index]}
-						{@render displayItem(item, index)}
-					{/if}
-				{/each}
-				<a href="/?world={world_id}&metal={metal_id}">
-					<div class="relative flex h-full items-center gap-2 rounded-2xl bg-sky-300 p-6">
-						<span class="text-4xl">🆕</span>
-						<p class="text-2xl font-bold">Create a new one</p>
-					</div>
-				</a>
-			</div>
+			{@const grouppedItems = sorted.filter((v) => {
+				return v.inputItemName === value.name;
+			})}
+			{#if grouppedItems.length}
+				<h1 class="mx-4 rounded bg-sky-600 px-4 py-2 text-4xl font-bold text-white capitalize">
+					{value.name}
+				</h1>
+				<div class="m-4 grid grid-cols-3 gap-8">
+					{#each grouppedItems as item, index}
+						{#if !hideArray[index]}
+							{@render displayItem({ item, index })}
+						{/if}
+					{/each}
+					<a href="/?world={world_id}&metal={metal_id}&inputName={value.name}">
+						<div
+							class="relative flex h-full items-center gap-2 rounded-2xl border bg-sky-300 p-6 shadow-2xl"
+						>
+							<span class="text-4xl">🆕</span>
+							<p class="text-2xl font-bold">Create a new one</p>
+						</div>
+					</a>
+				</div>
+			{/if}
 		{/each}
 	{/if}
 </main>

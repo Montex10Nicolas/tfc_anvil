@@ -14,7 +14,8 @@
 	const params = useSearchParams(
 		z.object({
 			world: z.string().default(''),
-			metal: z.string().default('')
+			metal: z.string().default(''),
+			inputName: z.enum(['ingot', 'double ingot', 'sheet', 'double sheet']).default('ingot')
 		})
 	);
 
@@ -36,10 +37,12 @@
 	});
 	let worldValue = $state(params.world);
 	let metalValue = $state(params.metal);
+
 	let itemName = $state('');
-	let inputItem = $state('ingot');
+	let inputItem = $state(params.inputName);
 	let endPoint = $state(0);
-	let inputName: HTMLInputElement;
+
+	let htmlNameItem: HTMLInputElement;
 
 	let toReach = $derived.by(() => {
 		let starting = [endPoint, endPoint, endPoint];
@@ -117,7 +120,7 @@
 			thirdLast: 0
 		};
 		clearQueue();
-		inputName.focus();
+		htmlNameItem.focus();
 	}
 
 	function clearQueue() {
@@ -173,7 +176,7 @@
 	}
 
 	onMount(() => {
-		inputName.focus();
+		htmlNameItem.focus();
 	});
 </script>
 
@@ -229,7 +232,7 @@
 
 	<!-- Item info -->
 	<section class="flex flex-col gap-y-4 rounded-2xl bg-white p-6 text-black">
-		<input bind:this={inputName} bind:value={itemName} class="rounded" placeholder="Item name" />
+		<input bind:this={htmlNameItem} bind:value={itemName} class="rounded" placeholder="Item name" />
 		<div class="grid grid-cols-2 gap-4">
 			{#if worldQuery.error}
 				<p>ooops!</p>
