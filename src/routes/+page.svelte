@@ -15,7 +15,7 @@
 		z.object({
 			world: z.string().default(''),
 			metal: z.string().default(''),
-			inputName: z.enum(['ingot', 'double ingot', 'sheet', 'double sheet']).default('ingot')
+			inputName: z.enum(['ingot', 'double ingot', 'sheet', 'double sheet', 'rod']).default('ingot')
 		})
 	);
 
@@ -37,9 +37,9 @@
 	});
 	let worldValue = $state(params.world);
 	let metalValue = $state(params.metal);
+	let inputItem = $state(params.inputName);
 
 	let itemName = $state('');
-	let inputItem = $state(params.inputName);
 	let endPoint = $state(0);
 
 	let htmlNameItem: HTMLInputElement;

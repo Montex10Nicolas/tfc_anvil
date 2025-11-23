@@ -59,18 +59,16 @@ export const getAlloys = query(async () => {
 })
 
 const alloyIngZod = z.object({
-  fluidName: z.string().min(1),
-  min: z.number().min(1).max(99),
-  max: z.number().min(1).max(99)
+  fluidName: z.string(),
+  min: z.number().min(1),
+  max: z.number().min(1)
 })
 
-export const createAlloyDB = command((z.object({
+export const createAlloy = command((z.object({
   name: z.string(),
   ingredients: z.array(alloyIngZod).min(2)
 })),
   async ({ name, ingredients }) => {
-    await db.insert(AlloyDB).values({
-      name: name,
-      ingredients: ingredients
-    })
+    console.log(name)
+    console.table(ingredients)
   });

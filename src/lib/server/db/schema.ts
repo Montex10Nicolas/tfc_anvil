@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import type { SvelteMap } from 'svelte/reactivity';
 
 export const worldDB = sqliteTable('world', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -26,4 +27,16 @@ export const inputItemDB = sqliteTable("inputItem", {
   inMillibuckets: integer('inMillibuckets').notNull()
 });
 
+export type alloyIngredient = {
+  fluidName: string,
+  min: number,
+  max: number
+}
+
+export const AlloyDB = sqliteTable("alloys", {
+  name: text('name').primaryKey().notNull(),
+  ingredients: text("ingredients", { mode: "json" }).$type<alloyIngredient[]>().notNull().default(sql`(json_array())`)
+});
+
 export type ItemDBSelect = typeof itemDB.$inferSelect;
+export type AlloyDBSelect = typeof AlloyDB.$inferInsert;

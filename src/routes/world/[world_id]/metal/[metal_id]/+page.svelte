@@ -247,7 +247,7 @@
 {/if}
 
 <main
-	class="min-h-screen min-w-screen bg-black/80 {editing.editing
+	class="min-h-screen min-w-screen bg-black/80 pt-1 pb-2 {editing.editing
 		? 'max-h-full overflow-hidden'
 		: ''}"
 >
