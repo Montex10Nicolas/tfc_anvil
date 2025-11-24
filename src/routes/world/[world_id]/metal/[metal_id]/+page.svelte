@@ -3,6 +3,7 @@
 	import { onClickOutside } from 'runed';
 	import { removeItem, updateItem } from '../../../../data.remote';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { derived } from 'svelte/store';
 
 	const { data } = $props();
 	const {
@@ -77,6 +78,19 @@
 		}
 		return arr;
 	});
+
+	let ingotsNeededInMl = $derived.by(() => {
+		let sum = 0;
+		pinned.forEach((pin) => {
+			const item = inputItems.find((v) => {
+				return v.name === pin.inputItemName;
+			});
+			if (item === undefined) return;
+			sum += item.inMillibuckets;
+		});
+		return sum;
+	});
+
 	function onkeydown(
 		event: KeyboardEvent & {
 			currentTarget: EventTarget & Window;
@@ -190,6 +204,101 @@
 	</div>
 {/snippet}
 
+<main
+	class="min-h-screen min-w-screen bg-black/80 pt-1 pb-2 {editing.editing
+		? 'max-h-full overflow-hidden'
+		: ''}"
+>
+	<a href="/world/{world_id}">
+		<h1 class="px-4 py-2 text-6xl font-black text-white">{worldName}</h1>
+	</a>
+	<div class="m-4 flex items-center space-x-4 rounded bg-white px-4 py-2">
+		<label class="flex flex-col items-center">
+			<span> Filter by Input Item: </span>
+			<select bind:value={sortInput} class="cursor-pointer rounded font-semibold capitalize">
+				<option value=""> none</option>
+				{#each inputItems as item}
+					<option value={item.name}>
+						{item.name}
+					</option>
+				{/each}
+			</select>
+		</label>
+		<div class="flex gap-8">
+			<label class="flex flex-col items-center gap-2">
+				<p>Groupped</p>
+				<input
+					type="checkbox"
+					class="min-h-8 w-full cursor-pointer rounded"
+					bind:checked={groupped}
+				/>
+			</label>
+		</div>
+		<div class="h-32 max-h-12 w-1 border bg-black"></div>
+		<p class="text-lg font-bold">{filter}</p>
+	</div>
+
+	<!-- Pinned -->
+	{#if pinnedID.size}
+		{@const size = pinnedID.size}
+
+		<div class="m-4">
+			<h3 class="my-2 rounded bg-sky-600 p-3 text-xl font-bold text-white">Pinned</h3>
+			<div class="my-2 w-full rounded bg-white text-2xl font-bold">
+				<p>Amount of {metalName}: {ingotsNeededInMl}ml {ingotsNeededInMl / 100}ingots</p>
+			</div>
+			<div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
+				{#each pinned as item, index}
+					{@render displayItem({ item, index, isPinned: true })}
+				{/each}
+			</div>
+		</div>
+		<hr class="mx-4 my-4 mt-4 min-h-4 bg-amber-400" />
+	{/if}
+
+	{#if !groupped}
+		<div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
+			{#each sorted as item, index}
+				{#if !hideArray[index]}
+					{@render displayItem({ item, index })}
+				{/if}
+			{/each}
+			<a href="/?world={world_id}&metal={metal_id}">
+				<div class="relative flex h-full items-center gap-2 rounded-2xl bg-sky-300 p-6">
+					<span class="text-4xl">🆕</span>
+					<p class="text-2xl font-bold">Create a new one</p>
+				</div>
+			</a>
+		</div>
+	{:else}
+		{#each inputItems as value}
+			{@const grouppedItems = sorted.filter((v) => {
+				return v.inputItemName === value.name;
+			})}
+			{#if grouppedItems.length}
+				<h1 class="mx-4 rounded bg-sky-600 px-4 py-2 text-4xl font-bold text-white capitalize">
+					{value.name}
+				</h1>
+				<div class="m-4 grid grid-cols-3 gap-8">
+					{#each grouppedItems as item, index}
+						{#if !hideArray[index]}
+							{@render displayItem({ item, index })}
+						{/if}
+					{/each}
+					<a href="/?world={world_id}&metal={metal_id}&inputName={value.name}">
+						<div
+							class="relative flex h-full items-center gap-2 rounded-2xl border bg-sky-300 p-6 shadow-2xl"
+						>
+							<span class="text-4xl">🆕</span>
+							<p class="text-2xl font-bold">Create a new one</p>
+						</div>
+					</a>
+				</div>
+			{/if}
+		{/each}
+	{/if}
+</main>
+
 {#if editing.editing}
 	{@const item = editing.item}
 	{#if item}
@@ -245,97 +354,6 @@
 		</div>
 	{/if}
 {/if}
-
-<main
-	class="min-h-screen min-w-screen bg-black/80 pt-1 pb-2 {editing.editing
-		? 'max-h-full overflow-hidden'
-		: ''}"
->
-	<a href="/world/{world_id}">
-		<h1 class="px-4 py-2 text-6xl font-black text-white">{worldName}</h1>
-	</a>
-	<div class="m-4 flex items-center space-x-4 rounded bg-white px-4 py-2">
-		<label class="flex flex-col items-center">
-			<span> Filter by Input Item: </span>
-			<select bind:value={sortInput} class="cursor-pointer rounded font-semibold capitalize">
-				<option value=""> none</option>
-				{#each inputItems as item}
-					<option value={item.name}>
-						{item.name}
-					</option>
-				{/each}
-			</select>
-		</label>
-		<div class="flex gap-8">
-			<label class="flex flex-col items-center gap-2">
-				<p>Groupped</p>
-				<input
-					type="checkbox"
-					class="min-h-8 w-full cursor-pointer rounded"
-					bind:checked={groupped}
-				/>
-			</label>
-		</div>
-		<div class="h-32 max-h-12 w-1 border bg-black"></div>
-		<p class="text-lg font-bold">{filter}</p>
-	</div>
-
-	<!-- Pinned -->
-	{#if pinnedID.size}
-		{@const size = pinnedID.size}
-		<div class="m-4">
-			<h3 class="my-2 rounded bg-sky-600 p-3 text-xl font-bold text-white">Pinned</h3>
-			<div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
-				{#each pinned as item, index}
-					{@render displayItem({ item, index, isPinned: true })}
-				{/each}
-			</div>
-		</div>
-		<hr class="mx-4 my-4 mt-4 min-h-4 bg-amber-400" />
-	{/if}
-
-	{#if !groupped}
-		<div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
-			{#each sorted as item, index}
-				{#if !hideArray[index]}
-					{@render displayItem({ item, index })}
-				{/if}
-			{/each}
-			<a href="/?world={world_id}&metal={metal_id}">
-				<div class="relative flex h-full items-center gap-2 rounded-2xl bg-sky-300 p-6">
-					<span class="text-4xl">🆕</span>
-					<p class="text-2xl font-bold">Create a new one</p>
-				</div>
-			</a>
-		</div>
-	{:else}
-		{#each inputItems as value}
-			{@const grouppedItems = sorted.filter((v) => {
-				return v.inputItemName === value.name;
-			})}
-			{#if grouppedItems.length}
-				<h1 class="mx-4 rounded bg-sky-600 px-4 py-2 text-4xl font-bold text-white capitalize">
-					{value.name}
-				</h1>
-				<div class="m-4 grid grid-cols-3 gap-8">
-					{#each grouppedItems as item, index}
-						{#if !hideArray[index]}
-							{@render displayItem({ item, index })}
-						{/if}
-					{/each}
-					<a href="/?world={world_id}&metal={metal_id}&inputName={value.name}">
-						<div
-							class="relative flex h-full items-center gap-2 rounded-2xl border bg-sky-300 p-6 shadow-2xl"
-						>
-							<span class="text-4xl">🆕</span>
-							<p class="text-2xl font-bold">Create a new one</p>
-						</div>
-					</a>
-				</div>
-			{/if}
-		{/each}
-	{/if}
-</main>
 
 <style>
 	input[type='number'] {
