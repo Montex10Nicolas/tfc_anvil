@@ -244,7 +244,7 @@
 
 		<div class="m-4">
 			<h3 class="my-2 rounded bg-sky-600 p-3 text-xl font-bold text-white">Pinned</h3>
-			<div class="my-2 w-full rounded bg-white text-2xl font-bold">
+			<div class="my-2 w-full rounded bg-white p-2 text-2xl font-bold">
 				<p>Amount of {metalName}: {ingotsNeededInMl}ml {ingotsNeededInMl / 100}ingots</p>
 			</div>
 			<div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
