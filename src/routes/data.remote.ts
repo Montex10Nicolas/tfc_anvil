@@ -5,7 +5,7 @@ import { asc, eq } from "drizzle-orm";
 import z from "zod";
 
 export const getWorlds = query(async () => {
-  const worlds = await db.select().from(worldDB);
+  const worlds = await db.select().from(worldDB).orderBy(asc(worldDB.name));
   return worlds;
 });
 
