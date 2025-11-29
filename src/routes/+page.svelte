@@ -10,12 +10,12 @@
 	} from './data.remote';
 	import { useSearchParams } from 'runed/kit';
 	import z from 'zod';
-	import type { Action } from 'svelte/action';
 
 	const params = useSearchParams(
 		z.object({
 			world: z.string().default(''),
-			metal: z.string().default('')
+			metal: z.string().default(''),
+			inputName: z.enum(['ingot', 'double ingot', 'sheet', 'double sheet', 'rod']).default('ingot')
 		})
 	);
 
@@ -37,10 +37,12 @@
 	});
 	let worldValue = $state(params.world);
 	let metalValue = $state(params.metal);
+	let inputItem = $state(params.inputName);
+
 	let itemName = $state('');
-	let inputItem = $state('ingot');
 	let endPoint = $state(0);
-	let inputName: HTMLInputElement;
+
+	let htmlNameItem: HTMLInputElement;
 
 	let toReach = $derived.by(() => {
 		let starting = [endPoint, endPoint, endPoint];
@@ -118,16 +120,12 @@
 			thirdLast: 0
 		};
 		clearQueue();
-		inputName.focus();
+		htmlNameItem.focus();
 	}
 
 	function clearQueue() {
 		queue = [];
 	}
-
-	const focusOnMe: Action = (node) => {
-		node.focus();
-	};
 
 	function autohammerize() {
 		let bestPath: number[] | null;
@@ -178,11 +176,11 @@
 	}
 
 	onMount(() => {
-		inputName.focus();
+		htmlNameItem.focus();
 	});
 </script>
 
-<main class="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-gray-800">
+<main class="flex min-h-screen w-screen flex-col items-center gap-4 bg-gray-800 py-4">
 	<!-- Numbers -->
 	<section
 		class="flex max-h-24 min-h-24 max-w-[30%] min-w-[30%] flex-col justify-around rounded-2xl bg-white py-2"
@@ -234,7 +232,7 @@
 
 	<!-- Item info -->
 	<section class="flex flex-col gap-y-4 rounded-2xl bg-white p-6 text-black">
-		<input bind:this={inputName} bind:value={itemName} class="rounded" placeholder="Item name" />
+		<input bind:this={htmlNameItem} bind:value={itemName} class="rounded" placeholder="Item name" />
 		<div class="grid grid-cols-2 gap-4">
 			{#if worldQuery.error}
 				<p>ooops!</p>
@@ -252,7 +250,7 @@
 				</label>
 				{#if worldValue === 'new_one'}
 					<div
-						class="absolute top-0 left-0 z-50 flex h-screen w-screen items-center justify-center bg-black/60"
+						class="absolute top-0 left-0 flex h-screen w-screen items-center justify-center bg-black/60"
 					>
 						<form
 							{...createWorld}
@@ -265,11 +263,7 @@
 								>❌</button
 							>
 							<label class="flex flex-col">
-								<input
-									{...createWorld.fields.name.as('text')}
-									placeholder="World Name"
-									use:focusOnMe
-								/>
+								<input {...createWorld.fields.name.as('text')} placeholder="World Name" />
 							</label>
 							<div class="w-full">
 								<button
@@ -306,7 +300,7 @@
 				</div>
 				{#if metalValue === 'new_one'}
 					<div
-						class="absolute top-0 left-0 z-50 flex h-screen w-screen items-center justify-center bg-black/60"
+						class="absolute top-0 left-0 flex h-screen w-screen items-center justify-center bg-black/60"
 					>
 						<form
 							{...createMetal}
@@ -319,7 +313,7 @@
 								>❌</button
 							>
 							<label class="flex flex-col">
-								<input {...createMetal.fields.name.as('text')} placeholder="Metal" use:focusOnMe />
+								<input {...createMetal.fields.name.as('text')} placeholder="Metal" />
 							</label>
 							<div class="w-full">
 								<button
@@ -446,13 +440,8 @@
 			</div>
 		</div>
 
-		<div class="top-0 right-0">
-			<button
-				class="border-2 border-gray-900 bg-gray-300 px-8 py-2 font-bold"
-				onclick={autohammerize}
-			>
-				🖥️
-			</button>
+		<div class="absolute right-3 bottom-2 cursor-pointer rounded border p-0 text-xs">
+			<button class="text-xs" onclick={autohammerize}>🖥️</button>
 		</div>
 	</section>
 	<div class="w-1/4">
