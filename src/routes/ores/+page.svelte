@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { object } from 'zod';
-
 	let oreMLAmount = $state({
 		small: 10,
 		poor: 15,

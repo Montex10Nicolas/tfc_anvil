@@ -354,7 +354,7 @@
 	</section>
 
 	<!-- pad -->
-	<section class="rounded-2xl bg-white p-8">
+	<section class="relative rounded-2xl bg-white p-8">
 		<div class="flex justify-between">
 			<label class="flex items-center justify-between gap-2">
 				End point:
@@ -446,12 +446,12 @@
 			</div>
 		</div>
 
-		<div class="flex justify-center pt-4">
+		<div class="top-0 right-0">
 			<button
 				class="border-2 border-gray-900 bg-gray-300 px-8 py-2 font-bold"
 				onclick={autohammerize}
 			>
-				AUTOHAMMER
+				🖥️
 			</button>
 		</div>
 	</section>
