@@ -13,6 +13,14 @@
 		rich: 0
 	});
 
+	let stackAmount = $state(128);
+	let stacks = $state({
+		small: 0,
+		poor: 0,
+		normal: 0,
+		rich: 0
+	});
+
 	let total = $derived(
 		oreMLAmount.small * oreAmount.small +
 			oreMLAmount.poor * oreAmount.poor +
@@ -27,6 +35,7 @@
 			normal: 0,
 			rich: 0
 		};
+		stacks = oreAmount;
 	}
 </script>
 
@@ -68,6 +77,86 @@
 					rich: <input type="number" min="0" bind:value={oreAmount.rich} />qt</label
 				>
 			</div>
+		</div>
+		<div>
+			<p class="font-bold">
+				Stacks
+				<input
+					class="w-1/6! rounded! border-2! bg-gray-800! px-2! py-1! text-center! text-white!"
+					type="number"
+					bind:value={
+						() => stackAmount,
+						(value) => {
+							oreAmount.small = stacks.small * value;
+							oreAmount.normal = stacks.normal * value;
+							oreAmount.poor = stacks.poor * value;
+							oreAmount.rich = stacks.rich * value;
+							stackAmount = value;
+						}
+					}
+				/>
+			</p>
+			<label class="flex items-center justify-around"
+				>small:
+
+				<input
+					type="number"
+					min="0"
+					bind:value={
+						() => stacks.small,
+						(value) => {
+							stacks.small = value;
+							oreAmount.small = value * stackAmount;
+						}
+					}
+				/>
+				qt</label
+			>
+			<label class="flex items-center justify-around">
+				poor:
+				<input
+					type="number"
+					min="0"
+					bind:value={
+						() => stacks.poor,
+						(value) => {
+							stacks.poor = value;
+							oreAmount.poor = value * stackAmount;
+						}
+					}
+				/>
+			</label>
+
+			<label class="flex items-center justify-around"
+				>Normal:
+
+				<input
+					type="number"
+					min="0"
+					bind:value={
+						() => stacks.normal,
+						(value) => {
+							stacks.normal = value;
+							oreAmount.normal = value * stackAmount;
+						}
+					}
+				/>
+				qt</label
+			>
+			<label class="flex items-center justify-around">
+				Rich:
+				<input
+					type="number"
+					min="0"
+					bind:value={
+						() => stacks.rich,
+						(value) => {
+							stacks.rich = value;
+							oreAmount.rich = value * stackAmount;
+						}
+					}
+				/>
+			</label>
 		</div>
 	</div>
 	<div class="flex justify-between rounded-2xl bg-white p-4 text-2xl">

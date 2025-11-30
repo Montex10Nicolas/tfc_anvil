@@ -1,6 +1,5 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import type { SvelteMap } from 'svelte/reactivity';
 
 export const worldDB = sqliteTable('world', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
