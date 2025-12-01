@@ -7,9 +7,34 @@
 	let { alloys } = data;
 	// in ingots (1 ingot = 100ml)
 
-	const defaultAlloy = {
+	type DisplayAlloy = {
+		id: `${string}-${string}-${string}-${string}`;
+		name: string;
+		ingredients: DisplayIngredient[];
+		amountDesired: number;
+	};
+
+	type DisplayIngredient = alloyIngredient & {
+		amount: number | null;
+	};
+
+	function transformIngredients(ingredients: alloyIngredient[]): DisplayIngredient[] {
+		let res: Array<DisplayIngredient> = [];
+
+		for (const ingredient of ingredients) {
+			res.push({
+				...ingredient,
+				amount: null
+			});
+		}
+
+		return res;
+	}
+
+	const defaultAlloy: DisplayAlloy = {
 		id: crypto.randomUUID(),
-		alloyChose: alloys[0],
+		name: alloys[0].name,
+		ingredients: transformIngredients(alloys[0].ingredients),
 		amountDesired: 1
 	};
 
@@ -23,12 +48,14 @@
 	let alloysToDisplay = $state<Array<typeof defaultAlloy>>([
 		{
 			id: crypto.randomUUID(),
-			alloyChose: alloys[0],
+			name: alloys[0].name,
+			ingredients: transformIngredients(alloys[0].ingredients),
 			amountDesired: 1
 		}
 	]);
 
 	let mode = $state<'Calculate' | 'Create'>('Calculate');
+	// Create
 	let alloyName = $state('');
 	let ingredients = $state<alloyIngredient[]>([{ ...defaultIngredient }, { ...defaultIngredient }]);
 
@@ -62,14 +89,16 @@
 									class="capitalize"
 									bind:value={
 										() => {
-											return selected.alloyChose.name;
+											return selected.name;
 										},
 										(v: string) => {
 											const found = alloys.find((value) => {
 												return value.name === v;
 											});
 											if (found === undefined) return;
-											selected.alloyChose = found;
+											selected.name = found.name;
+											selected.amountDesired = 0;
+											selected.ingredients = transformIngredients(found.ingredients);
 										}
 									}
 								>
@@ -99,7 +128,7 @@
 						>
 					</div>
 					{#if selected !== null}
-						{#each selected.alloyChose.ingredients as ingredient}
+						{#each selected.ingredients as ingredient}
 							{@const ml = wanted * 100}
 							{@const { fluidName, min, max } = ingredient}
 							<div class="my-2 flex justify-around gap-4 text-2xl capitalize">
@@ -107,6 +136,30 @@
 								<p>
 									{((ml / 100) * min).toFixed(0)}-{((ml / 100) * max).toFixed(0)}ml
 								</p>
+								<label class="flex items-center gap-3 text-sm">
+									How many Ingot do you have
+									<input
+										type="number"
+										min="1"
+										bind:value={
+											() => {
+												if (ingredient.amount === null) return 0;
+												return ingredient.amount;
+											},
+											(value: number) => {
+												if (value < 0) return (ingredient.amount = 0);
+												const { min } = ingredient;
+												ingredient.amount = value;
+
+												const minValue = Math.round(value / (min / 100));
+
+												selected.amountDesired = minValue;
+
+												return value;
+											}
+										}
+									/>
+								</label>
 								<p>
 									{((wanted / 100) * min).toFixed(2)}-{((wanted / 100) * max).toFixed(2)}ingots
 								</p>
