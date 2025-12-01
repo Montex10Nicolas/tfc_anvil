@@ -3,14 +3,15 @@
 	import { onClickOutside } from 'runed';
 	import { removeItem, updateItem } from '../../../../data.remote';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { derived } from 'svelte/store';
+	import { onMount } from 'svelte';
 
 	const { data } = $props();
 	const {
 		world: { name: worldName, world_id },
 		metal: { name: metalName, metal_id },
 		items,
-		inputItems
+		inputItems,
+		metals
 	} = data;
 	const hideArray: boolean[] = $state(new Array(items.length).fill(false));
 	let modal = $state<HTMLElement>()!;
@@ -36,6 +37,7 @@
 	);
 
 	let pinnedID = new SvelteSet<string>();
+	let globallyPinned: Array<(typeof items)[0]> = $state([]);
 
 	let sorted = $derived.by(() => {
 		let arr = items;
@@ -120,6 +122,14 @@
 		}
 		filter += key;
 	}
+	onMount(() => {
+		if (!localStorage) return [];
+		const itemsInStorage = localStorage.getItem('pinned_global');
+		if (itemsInStorage === null) return [];
+
+		const globalItems: Array<(typeof items)[0]> = JSON.parse(itemsInStorage);
+		globallyPinned = globalItems;
+	});
 </script>
 
 <svelte:window onkeydown={editing.editing ? null : onkeydown} />
@@ -127,17 +137,26 @@
 {#snippet displayItem({
 	item,
 	index = 0,
-	isPinned
+	isPinned,
+	isGlobal
 }: {
 	item: (typeof items)[0];
 	index?: number;
 	isPinned?: boolean;
+	isGlobal?: boolean;
 })}
 	{@const { name, id: itemID, inputItemName, metal_id, path, world_id } = item}
 	<div class="rounded-2xl bg-white p-6">
 		<div>
 			<div class="flex justify-between">
-				<p class="text-lg font-bold capitalize">{name} {metalName}</p>
+				<p class="text-lg font-bold capitalize">
+					{name}
+					{isGlobal
+						? metals.find((value) => {
+								if (value.metal_id === metal_id) return value;
+							})?.name
+						: metalName}
+				</p>
 				<div>
 					{#if !isPinned}
 						<button
@@ -146,6 +165,31 @@
 								pinnedID.add(itemID);
 							}}>📌</button
 						>
+					{:else}
+						<button
+							class="cursor-pointer"
+							style="color: transparent; text-shadow: 0 0 0 {isGlobal ? 'red' : 'blue'}"
+							onclick={() => {
+								const itemsInStorage = localStorage.getItem('pinned_global');
+								if (itemsInStorage === null) {
+									localStorage.setItem('pinned_global', JSON.stringify([item]));
+									return;
+								}
+
+								const storedItems: Array<(typeof items)[0]> = JSON.parse(itemsInStorage);
+
+								let found = storedItems.find((value) => {
+									return value.id === item.id;
+								});
+
+								if (found === undefined) {
+									storedItems.push(item);
+									localStorage.setItem('pinned_global', JSON.stringify(storedItems));
+								}
+							}}
+						>
+							🌐
+						</button>
 					{/if}
 					<button
 						class="cursor-pointer"
@@ -166,11 +210,22 @@
 					<button
 						class="cursor-pointer"
 						onclick={async () => {
-							if (isPinned) {
+							if (isPinned && !isGlobal) {
 								pinnedID.delete(itemID);
-							} else {
+							} else if (!isGlobal) {
 								hideArray[index] = true;
 								await removeItem(itemID);
+							} else if (isGlobal) {
+								const indexItem = globallyPinned.findIndex((value, index) => {
+									if (value.id === itemID) {
+										return index;
+									}
+								});
+
+								const copy = [...globallyPinned];
+								copy.splice(indexItem, 1);
+								globallyPinned = copy;
+								localStorage.setItem('pinned_global', JSON.stringify(copy));
 							}
 						}}
 					>
@@ -206,7 +261,7 @@
 
 <main
 	class="min-h-screen min-w-screen bg-black/80 pt-1 pb-2 {editing.editing
-		? 'max-h-full overflow-hidden'
+		? 'max-h-screen overflow-hidden'
 		: ''}"
 >
 	<a href="/world/{world_id}">
@@ -239,8 +294,8 @@
 	</div>
 
 	<!-- Pinned -->
-	{#if pinnedID.size}
-		{@const size = pinnedID.size}
+	{#if pinnedID.size || globallyPinned.length}
+		{@const size = pinnedID.size + globallyPinned.length}
 
 		<div class="m-4">
 			<h3 class="my-2 rounded bg-sky-600 p-3 text-xl font-bold text-white">Pinned</h3>
@@ -250,6 +305,9 @@
 			<div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
 				{#each pinned as item, index}
 					{@render displayItem({ item, index, isPinned: true })}
+				{/each}
+				{#each globallyPinned as item, index}
+					{@render displayItem({ item, index, isPinned: true, isGlobal: true })}
 				{/each}
 			</div>
 		</div>

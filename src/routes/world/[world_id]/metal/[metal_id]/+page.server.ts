@@ -9,12 +9,14 @@ export const load: PageServerLoad = async ({ params }) => {
   const items = await db.select().from(itemDB).where(and(eq(itemDB.world_id, world_id), eq(itemDB.metal_id, metal_id))).orderBy(itemDB.name);
   const world = (await db.select({ name: worldDB.name, world_id: worldDB.id }).from(worldDB).where(eq(worldDB.id, world_id)))[0]
   const metal = (await db.select({ name: metalGroupsDB.name, metal_id: metalGroupsDB.id }).from(metalGroupsDB).where(eq(metalGroupsDB.id, metal_id)))[0]
+  const metals = await db.select({ name: metalGroupsDB.name, metal_id: metalGroupsDB.id }).from(metalGroupsDB);
   const inputItems = await db.select().from(inputItemDB);
 
   return {
     items,
     world,
     metal,
+    metals,
     inputItems
   }
 };
