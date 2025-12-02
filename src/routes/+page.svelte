@@ -180,6 +180,18 @@
 	});
 </script>
 
+<svelte:window
+	onkeydown={(k) => {
+		const target = k.target as HTMLElement;
+		if (target.tagName === 'INPUT') return;
+
+		const key = k.key;
+		if (key.toLowerCase() === 'backspace') {
+			queue = queue.slice(0, queue.length - 1);
+		}
+	}}
+/>
+
 <main class="flex min-h-screen w-screen flex-col items-center gap-4 bg-gray-800 py-4">
 	<!-- Numbers -->
 	<section
