@@ -40,46 +40,43 @@
 	let globallyPinned: Array<(typeof items)[0]> = $state([]);
 
 	let sorted = $derived.by(() => {
-		let arr = items;
-		const sorInp = sortInput.toLowerCase();
+		const globallyPinnedID = new Set<string>();
+		globallyPinned.map((v) => {
+			globallyPinnedID.add(v.id);
+		});
 
-		if (sorInp === '') {
-			arr = [...items];
-		} else {
-			arr = [...items].filter((v) => {
-				if (v.inputItemName === sorInp) {
+		let arr = items.filter((item) => {
+			const { id } = item;
+			if (globallyPinnedID.has(id) || pinnedID.has(id)) return;
+			return item;
+		});
+
+		const sortedBy = sortInput.toLowerCase();
+
+		if (sortedBy !== '') {
+			arr = arr.filter((v) => {
+				if (v.inputItemName === sortedBy) {
 					return v;
 				}
 			});
 		}
 
-		let finalArray: typeof items = [];
-		for (const item of arr) {
-			if (!pinnedID.has(item.id)) {
-				finalArray.push(item);
-			}
-		}
+		if (filter === '') return arr;
 
-		if (filter === '') return finalArray;
-
-		let filtered = finalArray.filter((item) => {
+		const founds = arr.filter((item) => {
 			if (item.name.toLowerCase().includes(filter.toLowerCase())) {
 				return item;
 			}
 		});
 
-		return filtered;
+		return founds;
 	});
 
-	let pinned = $derived.by(() => {
-		let arr: typeof items = [];
-		for (const item of items) {
-			if (pinnedID.has(item.id)) {
-				arr.push(item);
-			}
-		}
-		return arr;
-	});
+	let pinned = $derived(
+		items.filter((item) => {
+			if (pinnedID.has(item.id)) return item;
+		})
+	);
 
 	let ingotsNeededInMl = $derived.by(() => {
 		let sum = 0;
@@ -173,19 +170,24 @@
 								const itemsInStorage = localStorage.getItem('pinned_global');
 								if (itemsInStorage === null) {
 									localStorage.setItem('pinned_global', JSON.stringify([item]));
+									globallyPinned = [item];
+									pinnedID.delete(item.id);
 									return;
 								}
 
-								const storedItems: Array<(typeof items)[0]> = JSON.parse(itemsInStorage);
+								const storedItems: typeof globallyPinned = JSON.parse(itemsInStorage);
 
 								let found = storedItems.find((value) => {
 									return value.id === item.id;
 								});
 
-								if (found === undefined) {
-									storedItems.push(item);
-									localStorage.setItem('pinned_global', JSON.stringify(storedItems));
-								}
+								if (found !== undefined) return;
+
+								storedItems.push(item);
+								localStorage.setItem('pinned_global', JSON.stringify(storedItems));
+
+								globallyPinned = [...storedItems];
+								pinnedID.delete(item.id);
 							}}
 						>
 							🌐
@@ -226,6 +228,7 @@
 								copy.splice(indexItem, 1);
 								globallyPinned = copy;
 								localStorage.setItem('pinned_global', JSON.stringify(copy));
+								pinnedID.delete(itemID);
 							}
 						}}
 					>
@@ -299,8 +302,14 @@
 
 		<div class="m-4">
 			<h3 class="my-2 rounded bg-sky-600 p-3 text-xl font-bold text-white">Pinned</h3>
-			<div class="my-2 w-full rounded bg-white p-2 text-2xl font-bold">
-				<p>Amount of {metalName}: {ingotsNeededInMl}ml {ingotsNeededInMl / 100}ingots</p>
+			<div class="flex gap-4">
+				<div class="my-2 w-full rounded bg-white p-2 text-2xl font-bold">
+					<p>Amount of {metalName}: {ingotsNeededInMl}ml {ingotsNeededInMl / 100}ingots</p>
+				</div>
+				<button
+					class="my-2 cursor-pointer rounded bg-purple-600 px-4 font-bold text-white uppercase"
+					>Save</button
+				>
 			</div>
 			<div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
 				{#each pinned as item, index}
