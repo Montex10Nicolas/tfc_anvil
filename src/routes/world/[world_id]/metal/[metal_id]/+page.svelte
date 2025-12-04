@@ -90,6 +90,30 @@
 		return sum;
 	});
 
+	function handlePinning({ item }: { item: (typeof items)[0] }) {
+		const itemsInStorage = localStorage.getItem('pinned_global');
+		if (itemsInStorage === null) {
+			localStorage.setItem('pinned_global', JSON.stringify([item]));
+			globallyPinned = [item];
+			pinnedID.delete(item.id);
+			return;
+		}
+
+		const storedItems: typeof globallyPinned = JSON.parse(itemsInStorage);
+
+		let found = storedItems.find((value) => {
+			return value.id === item.id;
+		});
+
+		if (found !== undefined) return;
+
+		storedItems.push(item);
+		localStorage.setItem('pinned_global', JSON.stringify(storedItems));
+
+		globallyPinned = [...storedItems];
+		pinnedID.delete(item.id);
+	}
+
 	function onkeydown(
 		event: KeyboardEvent & {
 			currentTarget: EventTarget & Window;
@@ -166,29 +190,7 @@
 						<button
 							class="cursor-pointer"
 							style="color: transparent; text-shadow: 0 0 0 {isGlobal ? 'red' : 'blue'}"
-							onclick={() => {
-								const itemsInStorage = localStorage.getItem('pinned_global');
-								if (itemsInStorage === null) {
-									localStorage.setItem('pinned_global', JSON.stringify([item]));
-									globallyPinned = [item];
-									pinnedID.delete(item.id);
-									return;
-								}
-
-								const storedItems: typeof globallyPinned = JSON.parse(itemsInStorage);
-
-								let found = storedItems.find((value) => {
-									return value.id === item.id;
-								});
-
-								if (found !== undefined) return;
-
-								storedItems.push(item);
-								localStorage.setItem('pinned_global', JSON.stringify(storedItems));
-
-								globallyPinned = [...storedItems];
-								pinnedID.delete(item.id);
-							}}
+							onclick={() => handlePinning({ item })}
 						>
 							🌐
 						</button>
@@ -308,7 +310,11 @@
 				</div>
 				<button
 					class="my-2 cursor-pointer rounded bg-purple-600 px-4 font-bold text-white uppercase"
-					>Save</button
+					onclick={() => {
+						pinned.forEach((item) => {
+							handlePinning({ item });
+						});
+					}}>Save</button
 				>
 			</div>
 			<div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
