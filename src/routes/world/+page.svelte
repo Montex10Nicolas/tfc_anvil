@@ -1,7 +1,16 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { getWorlds } from '../data.remote';
 
 	const worlds = getWorlds();
+
+	$effect(() => {
+		if (!worlds.current) return;
+
+		if (worlds.current.length === 1) {
+			goto(`/world/${worlds.current[0].id}`);
+		}
+	});
 </script>
 
 <main class="flex h-screen w-screen items-center justify-center bg-black/80">
