@@ -6,13 +6,15 @@
 	import { onMount } from 'svelte';
 
 	const { data } = $props();
+	// svelte-ignore state_referenced_locally
 	const {
-		world: { name: worldName, world_id },
+		world: { world_id },
 		metal: { name: metalName, metal_id },
 		items,
 		inputItems,
 		metals
 	} = data;
+
 	const hideArray: boolean[] = $state(new Array(items.length).fill(false));
 	let modal = $state<HTMLElement>()!;
 
@@ -79,16 +81,34 @@
 	);
 
 	let ingotsNeededInMl = $derived.by(() => {
-		let sum = 0;
-		pinned.forEach((pin) => {
-			const item = inputItems.find((v) => {
-				return v.name === pin.inputItemName;
-			});
-			if (item === undefined) return;
-			sum += item.inMillibuckets;
+		const itemsByMetal = new Map<string, number>();
+
+		const unifiedPinned = [...pinned, ...globallyPinned];
+
+		unifiedPinned.map((item) => {
+			const { inputItemName, metal_id } = item;
+			const metalName = getMetalName(metal_id);
+
+			if (metalName === undefined) return;
+			let current = itemsByMetal.get(metalName) ?? 0;
+
+			const amountInML =
+				inputItems.find((input) => {
+					if (input.name === inputItemName) return input;
+				})?.inMillibuckets ?? 0;
+
+			itemsByMetal.set(metalName, current + amountInML);
 		});
-		return sum;
+
+		return itemsByMetal;
 	});
+
+	function getMetalName(id: string) {
+		const found = metals.find((value) => {
+			if (value.metal_id === id) return value;
+		});
+		return found?.name;
+	}
 
 	function handlePinning({ item }: { item: (typeof items)[0] }) {
 		const itemsInStorage = localStorage.getItem('pinned_global');
@@ -269,9 +289,12 @@
 		? 'max-h-screen overflow-hidden'
 		: ''}"
 >
-	<a href="/world/{world_id}">
-		<h1 class="px-4 py-2 text-6xl font-black text-white">{worldName}</h1>
-	</a>
+	<div class="m-4 flex items-center justify-between">
+		<a href="/world/{world_id}">
+			<h1 class="cursor-pointer font-semibold text-violet-300">⬅️ Go back to metal selection</h1>
+		</a>
+		<h2 class="text-2xl font-bold text-white">{metalName}</h2>
+	</div>
 	<div class="m-4 flex items-center space-x-4 rounded bg-white px-4 py-2">
 		<label class="flex flex-col items-center">
 			<span> Filter by Input Item: </span>
@@ -304,18 +327,40 @@
 
 		<div class="m-4">
 			<h3 class="my-2 rounded bg-sky-600 p-3 text-xl font-bold text-white">Pinned</h3>
-			<div class="flex gap-4">
-				<div class="my-2 w-full rounded bg-white p-2 text-2xl font-bold">
-					<p>Amount of {metalName}: {ingotsNeededInMl}ml {ingotsNeededInMl / 100}ingots</p>
-				</div>
-				<button
-					class="my-2 cursor-pointer rounded bg-purple-600 px-4 font-bold text-white uppercase"
-					onclick={() => {
-						pinned.forEach((item) => {
-							handlePinning({ item });
-						});
-					}}>Save</button
+			<div class="flex items-center justify-between">
+				<div
+					class="grid w-[80%] grid-cols-{ingotsNeededInMl.size < 4
+						? ingotsNeededInMl.size
+						: 4} gap-x-2"
 				>
+					{#each ingotsNeededInMl as [metalName, amount]}
+						<div class="my-2 w-full rounded bg-white p-2 text-2xl font-bold">
+							<p>{metalName}: {amount / 100}({amount}ml)</p>
+						</div>
+					{/each}
+				</div>
+				<div class="flex gap-8">
+					<button
+						class="my-2 cursor-pointer rounded bg-purple-600 px-4 py-4 font-bold text-white uppercase"
+						onclick={() => {
+							pinned.forEach((item) => {
+								handlePinning({ item });
+							});
+						}}>Save</button
+					>
+					<button
+						class="my-2 cursor-pointer rounded bg-red-600 px-4 py-4 font-bold text-white uppercase"
+						onclick={() => {
+							[...pinned, ...globallyPinned].map((item) => {
+								const { id: itemID } = item;
+								pinnedID.delete(itemID);
+							});
+							globallyPinned = [];
+							pinned = [];
+							localStorage.setItem('pinned_global', JSON.stringify([]));
+						}}>Remove</button
+					>
+				</div>
 			</div>
 			<div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
 				{#each pinned as item, index}
