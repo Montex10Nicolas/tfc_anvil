@@ -27,9 +27,19 @@
 	let order: Order = $state('none');
 	let upOrDown: 'asc' | 'desc' = $state('asc');
 
+	let filter = $state('');
+
 	let sortedCrops = $derived.by(() => {
-		let arr = [...crops];
-		if (order === 'none') return crops;
+		let arr =
+			filter == ''
+				? [...crops]
+				: crops.filter((crop) => {
+						if (crop.name.toLowerCase().includes(filter.toLowerCase())) {
+							return crop;
+						}
+					});
+
+		if (order === 'none') return arr;
 		switch (order) {
 			case 'temperature-min':
 				arr = arr.sort((a, b) => {
@@ -79,7 +89,39 @@
 	function switchUpDown() {
 		upOrDown = upOrDown === 'asc' ? 'desc' : 'asc';
 	}
+
+	function onkeydown(
+		event: KeyboardEvent & {
+			currentTarget: EventTarget & Window;
+		}
+	) {
+		const { key, ctrlKey } = event;
+		const uglyKeys = ['Control', 'Shift'];
+
+		for (const keys of uglyKeys) {
+			if (key === keys) return;
+		}
+
+		if (key === 'Escape') {
+			filter = '';
+			return;
+		}
+
+		if (key.toLowerCase() === 'backspace') {
+			if (ctrlKey) {
+				filter = '';
+				return;
+			}
+			let temp = filter.split('');
+			temp.splice(temp.length - 1, 1);
+			filter = temp.join('');
+			return;
+		}
+		filter += key;
+	}
 </script>
+
+<svelte:window {onkeydown} />
 
 <main class="w-screen">
 	<table class="w-full p-12">

@@ -5,6 +5,9 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { onMount } from 'svelte';
 
+	//TODO: Try remote functions
+	// TODO: Enable/Disable and amount of items
+
 	const { data } = $props();
 	// svelte-ignore state_referenced_locally
 	const {
@@ -26,6 +29,8 @@
 		editing: false,
 		path: []
 	});
+
+	// editing = { item: items[0], editing: true, path: items[0].path };
 
 	let filter = $state('');
 	let sortInput = $state('');
@@ -373,6 +378,7 @@
 		</div>
 		<hr class="mx-4 my-4 mt-4 min-h-4 bg-amber-400" />
 	{/if}
+	<!-- end pinned -->
 
 	{#if !groupped}
 		<div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
@@ -437,16 +443,26 @@
 				<label>
 					<div class="grid grid-cols-8 gap-4">
 						{#each editing.path as value, index}
-							<input
-								type="number"
-								bind:value={
-									() => value,
-									(newValue) => {
-										editing.path[index] = newValue;
+							<div data-hello="bho" class="text-md relative w-12 rounded border font-semibold">
+								<button
+									class="absolute -top-2 -right-2 z-40 cursor-pointer rounded-full bg-gray-900 p-1.5 text-center text-[0.5rem] hover:visible"
+									onclick={() => {
+										editing.path.splice(index, 1);
+									}}
+								>
+									❌
+								</button>
+								<input
+									class="max-w-full"
+									type="number"
+									bind:value={
+										() => value,
+										(newValue) => {
+											editing.path[index] = newValue;
+										}
 									}
-								}
-								class="text-md w-12 rounded border font-semibold"
-							/>
+								/>
+							</div>
 						{/each}
 						<button
 							class="cursor-pointer rounded border p-2 font-black"
