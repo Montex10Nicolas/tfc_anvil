@@ -2,7 +2,7 @@
 	import type { ItemDBSelect } from '$lib/server/db/schema.js';
 	import { onClickOutside } from 'runed';
 	import { removeItem, updateItem } from '../../../../data.remote';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { onMount } from 'svelte';
 
 	//TODO: Try remote functions
@@ -45,6 +45,7 @@
 
 	let pinnedID = new SvelteSet<string>();
 	let globallyPinned: Array<(typeof items)[0]> = $state([]);
+	let pinnedAmount = new SvelteMap<string, number>();
 
 	let sorted = $derived.by(() => {
 		const globallyPinnedID = new Set<string>();
@@ -102,7 +103,9 @@
 					if (input.name === inputItemName) return input;
 				})?.inMillibuckets ?? 0;
 
-			itemsByMetal.set(metalName, current + amountInML);
+			const amount = pinnedAmount.get(item.id) ?? 1;
+
+			itemsByMetal.set(metalName, current + amountInML * amount);
 		});
 
 		return itemsByMetal;
@@ -115,7 +118,7 @@
 		return found?.name;
 	}
 
-	function handlePinning({ item }: { item: (typeof items)[0] }) {
+	function handleGloballyPinned({ item }: { item: (typeof items)[0] }) {
 		const itemsInStorage = localStorage.getItem('pinned_global');
 		if (itemsInStorage === null) {
 			localStorage.setItem('pinned_global', JSON.stringify([item]));
@@ -168,8 +171,9 @@
 		}
 		filter += key;
 	}
+
 	onMount(() => {
-		if (!localStorage) return [];
+		if (!localStorage) return;
 		const itemsInStorage = localStorage.getItem('pinned_global');
 		if (itemsInStorage === null) return [];
 
@@ -209,13 +213,14 @@
 							class="cursor-pointer"
 							onclick={() => {
 								pinnedID.add(itemID);
+								pinnedAmount.set(item.id, 1);
 							}}>📌</button
 						>
 					{:else}
 						<button
 							class="cursor-pointer"
 							style="color: transparent; text-shadow: 0 0 0 {isGlobal ? 'red' : 'blue'}"
-							onclick={() => handlePinning({ item })}
+							onclick={() => handleGloballyPinned({ item })}
 						>
 							🌐
 						</button>
@@ -271,16 +276,38 @@
 				<p>({path.reduce((accumulator, currentValue) => accumulator + currentValue, 0)})</p>
 			</div>
 			<div class="flex justify-between">
-				<p class="text-2xl font-black">
-					{[...path]
-						.slice(
-							0,
-							path.findIndex((value, index) => {
-								if (value !== 16) return index;
-							})
-						)
-						.reduce((acc, cur) => acc + cur, 0)}
-				</p>
+				<div class="flex gap-8 text-center text-2xl font-bold">
+					<p class="">
+						{[...path]
+							.slice(
+								0,
+								path.findIndex((value, index) => {
+									if (value !== 16) return index;
+								})
+							)
+							.reduce((acc, cur) => acc + cur, 0)}
+					</p>
+					{#if isPinned}
+						<p class="">
+							<button
+								class="cursor-pointer"
+								onclick={() => {
+									const curr = pinnedAmount.get(item.id) ?? 1;
+									if (curr === 0) return;
+									pinnedAmount.set(item.id, curr - 1);
+								}}>-</button
+							>
+							<span>{pinnedAmount.get(item.id)}</span>
+							<button
+								class="cursor-pointer"
+								onclick={() => {
+									const curr = pinnedAmount.get(item.id) ?? 1;
+									pinnedAmount.set(item.id, curr + 1);
+								}}>+</button
+							>
+						</p>
+					{/if}
+				</div>
 				<p class="text-2xl font-black">
 					{inputItemName}
 				</p>
@@ -288,6 +315,13 @@
 		</div>
 	</div>
 {/snippet}
+
+<!-- debugging -->
+<div class="absolute top-0 right-0 m-1 border border-black bg-white p-8">
+	<dev>
+		<code> {JSON.stringify(pinnedAmount, null, 2)}</code>
+	</dev>
+</div>
 
 <main
 	class="min-h-screen min-w-screen bg-black/80 pt-1 pb-2 {editing.editing
@@ -349,7 +383,7 @@
 						class="my-2 cursor-pointer rounded bg-purple-600 px-4 py-4 font-bold text-white uppercase"
 						onclick={() => {
 							pinned.forEach((item) => {
-								handlePinning({ item });
+								handleGloballyPinned({ item });
 							});
 						}}>Save</button
 					>
