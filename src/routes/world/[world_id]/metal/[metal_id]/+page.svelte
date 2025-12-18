@@ -148,10 +148,10 @@
 		}
 	) {
 		const { key, ctrlKey } = event;
-		const uglyKeys = ['Control', 'Shift'];
+		const uglyKeys = ['Control', 'Shift', 'Enter'];
 
-		for (const keys of uglyKeys) {
-			if (key === keys) return;
+		for (const ugly of uglyKeys) {
+			if (key === ugly) return;
 		}
 
 		if (key === 'Escape') {
@@ -195,7 +195,23 @@
 	isPinned?: boolean;
 	isGlobal?: boolean;
 })}
-	{@const { name, id: itemID, inputItemName, metal_id, path, world_id } = item}
+	{@const {
+		name,
+		id: itemID,
+		inputItemName,
+		metal_id,
+		path,
+		world_id,
+		lastAction,
+		secondAction,
+		thirdAction
+	} = item}
+	{@const pathTotal = path.reduce((pre, curr) => {
+		return curr + pre;
+	})}
+	{@const lastValue = lastAction === null ? 0 : lastAction}
+	{@const secondValue = secondAction === null ? 0 : secondAction}
+	{@const thirdValue = thirdAction === null ? 0 : thirdAction}
 	<div class="rounded-2xl bg-white p-6">
 		<div>
 			<div class="flex justify-between">
@@ -235,7 +251,10 @@
 									path,
 									inputItemName,
 									world_id,
-									metal_id
+									metal_id,
+									lastAction,
+									secondAction,
+									thirdAction
 								},
 								editing: true,
 								path: path
@@ -269,14 +288,18 @@
 				</div>
 			</div>
 
-			<div class="flex w-[80%] flex-wrap gap-1 text-lg">
-				{#each path as value}
-					<p>{value}</p>
+			<div class="flex w-[80%] flex-wrap items-center gap-1 text-lg">
+				{#each path as value, index}
+					<div class="">
+						<p class="text-end text-[0.6rem]">{index + 1}</p>
+						<p>{value}</p>
+					</div>
 				{/each}
-				<p>({path.reduce((accumulator, currentValue) => accumulator + currentValue, 0)})</p>
+				<p>({pathTotal})</p>
 			</div>
 			<div class="flex justify-between">
 				<div class="flex gap-8 text-center text-2xl font-bold">
+					<p>({pathTotal - lastValue - secondValue - thirdValue})</p>
 					<p class="">
 						{[...path]
 							.slice(
@@ -317,11 +340,11 @@
 {/snippet}
 
 <!-- debugging -->
-<div class="absolute top-0 right-0 m-1 border border-black bg-white p-8">
-	<dev>
-		<code> {JSON.stringify(pinnedAmount, null, 2)}</code>
-	</dev>
-</div>
+<!-- <div class="absolute top-0 right-0 m-1 border border-black bg-white p-8"> -->
+<!-- 	<dev> -->
+<!-- 		<code> {JSON.stringify(pinnedAmount, null, 2)}</code> -->
+<!-- 	</dev> -->
+<!-- </div> -->
 
 <main
 	class="min-h-screen min-w-screen bg-black/80 pt-1 pb-2 {editing.editing

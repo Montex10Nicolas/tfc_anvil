@@ -98,18 +98,20 @@
 
 	function handleButtons(value: number) {
 		const newValue = current + value;
-		if (newValue < 0 || newValue > 146) return;
+		if (newValue < 0) return;
 		current = newValue;
 		queue.push(value);
 	}
 
 	async function itemCreation() {
+		const { last, secondLast, thirdLast } = finishHits;
 		await createItem({
 			name: itemName,
 			metalID: metalValue,
 			worldID: worldValue,
 			itemInput: inputItem,
-			path: queueDisplay
+			path: queueDisplay,
+			actions: [last, secondLast, thirdLast]
 		});
 		itemName = '';
 		endPoint = 0;
@@ -372,8 +374,8 @@
 					bind:value={
 						() => endPoint,
 						(value) => {
-							if (value > 160) {
-								endPoint = 160;
+							if (value > 200) {
+								endPoint = 200;
 								return;
 							} else if (value < 0) {
 								endPoint = 0;

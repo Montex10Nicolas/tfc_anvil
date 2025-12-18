@@ -31,9 +31,37 @@ export const createMetal = form((z.object({ name: z.string().min(1) })),
     getMetals().refresh();
   });
 
-export const createItem = command((z.object({ name: z.string().min(1), metalID: z.string(), worldID: z.string(), itemInput: z.string(), path: z.array(z.number()) })),
-  async ({ name, worldID, metalID, itemInput, path }) => {
-    await db.insert(itemDB).values({ name: name, world_id: worldID, metal_id: metalID, inputItemName: itemInput, path: path });
+const action = z.union([
+  z.number("-15"),
+  z.number("-9"),
+  z.number("-6"),
+  z.number("-3"),
+  z.number("2"),
+  z.number("7"),
+  z.number("13"),
+  z.number("16"),
+]).nullable();
+export const createItem = command((
+  z.object({
+    name: z.string().min(1),
+    metalID: z.string(),
+    worldID: z.string(),
+    itemInput: z.string(),
+    path: z.array(z.number()),
+    actions: z.tuple([action, action, action])
+  })),
+  async ({ name, worldID, metalID, itemInput, path, actions }) => {
+    const [last, second, third] = actions;
+    await db.insert(itemDB).values({
+      name: name,
+      world_id: worldID,
+      metal_id: metalID,
+      inputItemName: itemInput,
+      path: path,
+      lastAction: last !== 0 ? last : null,
+      secondAction: second !== 0 ? second : null,
+      thirdAction: third !== 0 ? third : null
+    });
   });
 
 export const removeItem = command((z.string()), async (itemID) => {
