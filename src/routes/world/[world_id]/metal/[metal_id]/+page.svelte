@@ -6,7 +6,6 @@
 	import { onMount } from 'svelte';
 
 	//TODO: Try remote functions
-	// TODO: Enable/Disable and amount of items
 
 	const { data } = $props();
 	// svelte-ignore state_referenced_locally
@@ -209,9 +208,9 @@
 	{@const pathTotal = path.reduce((pre, curr) => {
 		return curr + pre;
 	})}
-	{@const lastValue = lastAction === null ? 0 : lastAction}
-	{@const secondValue = secondAction === null ? 0 : secondAction}
-	{@const thirdValue = thirdAction === null ? 0 : thirdAction}
+	{@const lastValue = lastAction === null ? 0 : path[path.length - 1]}
+	{@const secondValue = secondAction === null ? 0 : path[path.length - 2]}
+	{@const thirdValue = thirdAction === null ? 0 : path[path.length - 3]}
 	<div class="rounded-2xl bg-white p-6">
 		<div>
 			<div class="flex justify-between">
@@ -299,6 +298,7 @@
 			</div>
 			<div class="flex justify-between">
 				<div class="flex gap-8 text-center text-2xl font-bold">
+					<!-- <p>Last: {lastValue} | Second: {secondValue} | Third: {thirdValue}</p> -->
 					<p>({pathTotal - lastValue - secondValue - thirdValue})</p>
 					<p class="">
 						{[...path]
