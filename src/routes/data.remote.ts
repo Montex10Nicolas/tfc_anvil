@@ -1,7 +1,7 @@
 import { command, form, query } from "$app/server";
 import { db } from "$lib/server/db";
 import { AlloyDB, inputItemDB, itemDB, metalGroupsDB, worldDB } from "$lib/server/db/schema";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import z from "zod";
 
 export const getWorlds = query(async () => {
@@ -10,12 +10,27 @@ export const getWorlds = query(async () => {
 });
 
 export const getMetals = query(async () => {
-  const metalsGroup = await db.select().from(metalGroupsDB).orderBy(asc(metalGroupsDB.name));
+  const metalsGroup = await db.select()
+    .from(metalGroupsDB).orderBy(asc(metalGroupsDB.name));
   return metalsGroup;
 });
 
 export const allItems = query(async () => {
   const items = await db.select().from(itemDB);
+  return items;
+});
+
+export const getItems = query(z.object({
+  worldId: z.string(),
+  metalId: z.string()
+}), async ({ worldId, metalId }) => {
+  const items = await db.select()
+    .from(itemDB)
+    .where(
+      and(
+        eq(itemDB.world_id, worldId),
+        eq(itemDB.metal_id, metalId))
+    ).orderBy(asc(itemDB.name));
   return items;
 });
 

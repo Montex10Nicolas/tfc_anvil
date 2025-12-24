@@ -1,21 +1,26 @@
 <script lang="ts">
 	import type { ItemDBSelect } from '$lib/server/db/schema.js';
 	import { onClickOutside } from 'runed';
-	import { removeItem, updateItem } from '../../../../data.remote';
+	import {
+		getInputItems,
+		getItems,
+		getMetals,
+		removeItem,
+		updateItem
+	} from '../../../../data.remote';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { onMount } from 'svelte';
 
 	//TODO: Try remote functions
 
-	const { data } = $props();
-	// svelte-ignore state_referenced_locally
-	const {
-		world: { world_id },
-		metal: { name: metalName, metal_id },
-		items,
-		inputItems,
-		metals
-	} = data;
+	let { data } = $props();
+	let { world_id, metal_id } = $derived(data);
+
+	const items = $derived(await getItems({ worldId: world_id, metalId: metal_id }));
+	const inputItems = await getInputItems();
+	const metals = await getMetals();
+
+	let metalName = $derived(metals.find((v) => v.id === metal_id)!.name);
 
 	const hideArray: boolean[] = $state(new Array(items.length).fill(false));
 	let modal = $state<HTMLElement>()!;
@@ -91,11 +96,11 @@
 		const unifiedPinned = [...pinned, ...globallyPinned];
 
 		unifiedPinned.map((item) => {
-			const { inputItemName, metal_id } = item;
-			const metalName = getMetalName(metal_id);
+			const { inputItemName, metal_id: metalItem } = item;
+			const metalNameAAA = getMetalName(metalItem);
 
-			if (metalName === undefined) return;
-			let current = itemsByMetal.get(metalName) ?? 0;
+			if (metalNameAAA === undefined) return;
+			let current = itemsByMetal.get(metalNameAAA) ?? 0;
 
 			const amountInML =
 				inputItems.find((input) => {
@@ -104,7 +109,7 @@
 
 			const amount = pinnedAmount.get(item.id) ?? 1;
 
-			itemsByMetal.set(metalName, current + amountInML * amount);
+			itemsByMetal.set(metalNameAAA, current + amountInML * amount);
 		});
 
 		return itemsByMetal;
@@ -112,7 +117,7 @@
 
 	function getMetalName(id: string) {
 		const found = metals.find((value) => {
-			if (value.metal_id === id) return value;
+			if (value.id === id) return value;
 		});
 		return found?.name;
 	}
@@ -218,7 +223,7 @@
 					{name}
 					{isGlobal
 						? metals.find((value) => {
-								if (value.metal_id === metal_id) return value;
+								if (value.id === metal_id) return value.name;
 							})?.name
 						: metalName}
 				</p>
@@ -320,7 +325,7 @@
 									pinnedAmount.set(item.id, curr - 1);
 								}}>-</button
 							>
-							<span>{pinnedAmount.get(item.id)}</span>
+							<span>{pinnedAmount.has(item.id) ? pinnedAmount.get(item.id) : 1}</span>
 							<button
 								class="cursor-pointer"
 								onclick={() => {
@@ -340,9 +345,11 @@
 {/snippet}
 
 <!-- debugging -->
-<!-- <div class="absolute top-0 right-0 m-1 border border-black bg-white p-8"> -->
-<!-- 	<dev> -->
-<!-- 		<code> {JSON.stringify(pinnedAmount, null, 2)}</code> -->
+<!-- <div class="absolute right-0 bottom-0 m-1 border border-black bg-white p-8"> -->
+<!-- 	<dev class="flex flex-col"> -->
+<!-- 		<code> {JSON.stringify(pinned, null, 2)}</code> -->
+<!-- 		<code> {JSON.stringify(globallyPinned, null, 2)}</code> -->
+<!-- 		<code> {JSON.stringify(ingotsNeededInMl, null, 2)}</code> -->
 <!-- 	</dev> -->
 <!-- </div> -->
 
@@ -395,9 +402,9 @@
 						? ingotsNeededInMl.size
 						: 4} gap-x-2"
 				>
-					{#each ingotsNeededInMl as [metalName, amount]}
+					{#each ingotsNeededInMl as [metalNamee, amount]}
 						<div class="my-2 w-full rounded bg-white p-2 text-2xl font-bold">
-							<p>{metalName}: {amount / 100}({amount}ml)</p>
+							<p>{metalNamee}: {amount / 100}({amount}ml)</p>
 						</div>
 					{/each}
 				</div>
