@@ -34,9 +34,9 @@
 	);
 
 	const possibility = [-3, -6, -9, -15, 2, 7, 13, 16] as const;
-	const worldQuery = getWorlds();
-	const metalQuery = getMetals();
-	const inputItems = getInputItems();
+	const worldQuery = await getWorlds();
+	const metalQuery = await getMetals();
+	const inputItems = await getInputItems();
 
 	let queue: number[] = $state([]);
 	type PossibileHits = -1 | -15 | 2 | 7 | 13 | 16 | 0;
@@ -49,8 +49,9 @@
 		secondLast: 0,
 		thirdLast: 0
 	});
+
 	let worldValue = $state(
-		params.world.length ? params.world : worldQuery.current?.length ? worldQuery.current[0].id : ''
+		params.world.length ? params.world : worldQuery.length === 1 ? worldQuery[0].id : ''
 	);
 
 	let metalValue = $state(params.metal);
@@ -275,15 +276,11 @@
 	<section class="flex flex-col gap-y-4 rounded-2xl bg-white p-6 text-black">
 		<input bind:this={htmlNameItem} bind:value={itemName} class="rounded" placeholder="Item name" />
 		<div class="grid grid-cols-2 gap-4">
-			{#if worldQuery.error}
-				<p>ooops!</p>
-			{:else if worldQuery.loading}
-				<p>Loading...</p>
-			{:else if worldQuery.current !== undefined && worldQuery.current.length > 0}
+			{#if worldQuery.length}
 				<label class="flex flex-col">
 					World:
 					<select class="cursor-pointer rounded" bind:value={worldValue} placeholder="World">
-						{#each worldQuery.current as { id, name }}
+						{#each worldQuery as { id, name }}
 							<option value={id}>{name}</option>
 						{/each}
 						<option value="new_one">Create new one</option>
@@ -331,75 +328,61 @@
 				</form>
 			{/if}
 
-			{#if metalQuery.error}
-				<p>Something wrong</p>
-			{:else if metalQuery.loading}
-				<p>Loading metals...</p>
-			{:else if metalQuery.current}
-				<div>
-					<form>
+			<div>
+				<form>
+					<label class="flex flex-col">
+						Metal
+						<select class="cursor-pointer rounded" bind:value={metalValue}>
+							{#each metalQuery as { name, id }}
+								<option value={id}>{name}</option>
+							{/each}
+							<option value="new_one">Create new one</option>
+						</select>
+					</label>
+				</form>
+			</div>
+			{#if metalValue === 'new_one'}
+				<div
+					class="absolute top-0 left-0 flex h-screen w-screen items-center justify-center bg-black/60"
+				>
+					<form
+						bind:this={modal}
+						{...createMetal}
+						onsubmit={() => {
+							metalValue = '';
+						}}
+						class="relative z-99 flex flex-col gap-4 rounded-2xl bg-white p-16"
+					>
+						<button type="button" class="absolute top-1 right-1" onclick={() => (metalValue = '')}
+							>❌</button
+						>
 						<label class="flex flex-col">
-							Metal
-							<select class="cursor-pointer rounded" bind:value={metalValue}>
-								{#each metalQuery.current as { name, id }}
-									<option value={id}>{name}</option>
-								{/each}
-								<option value="new_one">Create new one</option>
-							</select>
+							<input
+								use:focusMeActions
+								{...createMetal.fields.name.as('text')}
+								placeholder="Metal"
+							/>
 						</label>
+						<div class="w-full">
+							<button
+								class="w-full rounded bg-green-700 py-2 text-center font-bold text-amber-50 uppercase"
+								type="submit">Save</button
+							>
+						</div>
 					</form>
 				</div>
-				{#if metalValue === 'new_one'}
-					<div
-						class="absolute top-0 left-0 flex h-screen w-screen items-center justify-center bg-black/60"
-					>
-						<form
-							bind:this={modal}
-							{...createMetal}
-							onsubmit={() => {
-								metalValue = '';
-							}}
-							class="relative z-99 flex flex-col gap-4 rounded-2xl bg-white p-16"
-						>
-							<button type="button" class="absolute top-1 right-1" onclick={() => (metalValue = '')}
-								>❌</button
-							>
-							<label class="flex flex-col">
-								<input
-									use:focusMeActions
-									{...createMetal.fields.name.as('text')}
-									placeholder="Metal"
-								/>
-							</label>
-							<div class="w-full">
-								<button
-									class="w-full rounded bg-green-700 py-2 text-center font-bold text-amber-50 uppercase"
-									type="submit">Save</button
-								>
-							</div>
-						</form>
-					</div>
-				{/if}
-			{:else}
-				<p>New one</p>
 			{/if}
 
-			{#if inputItems.loading}
-				<p>Loading...</p>
-			{:else if inputItems.error}
-				<p>Something wrong....</p>
-			{:else if inputItems.current}
-				<label class="col-span-2 flex flex-col">
-					Material:
-					<select bind:value={inputItem} class="cursor-pointer rounded">
-						{#each inputItems.current as materials}
-							<option value={materials.name}>
-								{materials.name}
-							</option>
-						{/each}
-					</select>
-				</label>
-			{/if}
+			<label class="col-span-2 flex flex-col">
+				Material:
+				<select bind:value={inputItem} class="cursor-pointer rounded">
+					{#each inputItems as materials}
+						<option value={materials.name}>
+							{materials.name}
+						</option>
+					{/each}
+				</select>
+			</label>
 		</div>
 	</section>
 
