@@ -62,14 +62,16 @@
 	let htmlNameItem: HTMLInputElement;
 
 	let toReach = $derived.by(() => {
-		let starting = [endPoint, endPoint, endPoint];
+		let starting = [endPoint ?? 0, endPoint ?? 0, endPoint ?? 0];
 		if (endPoint <= 0) return starting;
 		const { last, secondLast, thirdLast } = finishHits;
+		let isMultipleOptions = false;
 		for (const hit of [last, secondLast, thirdLast]) {
 			switch (hit) {
 				case 0:
 					break;
 				case -1:
+					isMultipleOptions = true;
 					starting = [starting[0] + 3, starting[1] + 6, starting[2] + 9];
 					break;
 				default:
@@ -79,7 +81,11 @@
 			}
 		}
 
-		return starting;
+		if (isMultipleOptions) {
+			return starting;
+		}
+
+		return [starting[0]];
 	});
 
 	let queueDisplay = $derived.by(() => {
@@ -400,8 +406,8 @@
 	<!-- pad -->
 	<section class="relative rounded-2xl bg-white p-8">
 		<div class="flex justify-between">
-			<label class="flex items-center justify-between gap-2">
-				End point:
+			<label class="flex flex-col items-center justify-between gap-2">
+				<p class="text-sm">End point:</p>
 				<input
 					class="text cursor-pointer rounded px-2 py-1 text-center font-semibold"
 					type="number"
@@ -422,13 +428,15 @@
 					}
 				/>
 			</label>
-			<div class="flex items-center gap-1">
-				<p>To reach:</p>
-				<div class="flex gap-1">
+			<div class="flex flex-col items-center gap-1">
+				<p class="text-sm">To reach:</p>
+				<div class="flex gap-3">
 					{#each toReach as end}
-						<p class="rounded border px-3 py-1 text-lg font-semibold">
-							{end}
-						</p>
+						<div class="grid h-8 w-12 place-items-center rounded border text-lg font-semibold">
+							<p>
+								{end}
+							</p>
+						</div>
 					{/each}
 				</div>
 			</div>
@@ -491,7 +499,7 @@
 		</div>
 
 		<div class="absolute right-3 bottom-2 cursor-pointer rounded border p-0 text-xs">
-			<button class="text-xs" onclick={autohammerize}>🖥️</button>
+			<button tabindex="-1" class="text-xs" onclick={autohammerize}>🖥️</button>
 		</div>
 	</section>
 	<div class="w-1/4">
