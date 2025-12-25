@@ -10,6 +10,20 @@
 	} from './data.remote';
 	import { useSearchParams } from 'runed/kit';
 	import z from 'zod';
+	import type { Action } from 'svelte/action';
+	import { onClickOutside } from 'runed';
+
+	let modal = $state<HTMLElement>()!;
+	onClickOutside(
+		() => modal,
+		() => {
+			if (worldValue === 'new_one') {
+				worldValue = '';
+			} else if (metalValue === 'new_one') {
+				metalValue = '';
+			}
+		}
+	);
 
 	const params = useSearchParams(
 		z.object({
@@ -35,7 +49,10 @@
 		secondLast: 0,
 		thirdLast: 0
 	});
-	let worldValue = $state(params.world);
+	let worldValue = $state(
+		params.world.length ? params.world : worldQuery.current?.length ? worldQuery.current[0].id : ''
+	);
+
 	let metalValue = $state(params.metal);
 	let inputItem = $state(params.inputName);
 
@@ -177,6 +194,10 @@
 		return null;
 	}
 
+	const focusMeActions: Action = (node) => {
+		node.focus();
+	};
+
 	onMount(() => {
 		htmlNameItem.focus();
 	});
@@ -264,9 +285,10 @@
 				</label>
 				{#if worldValue === 'new_one'}
 					<div
-						class="absolute top-0 left-0 flex h-screen w-screen items-center justify-center bg-black/60"
+						class="absolute top-0 left-0 z-100 flex h-screen w-screen items-center justify-center bg-black/60"
 					>
 						<form
+							bind:this={modal}
 							{...createWorld}
 							onsubmit={() => {
 								worldValue = '';
@@ -277,7 +299,11 @@
 								>❌</button
 							>
 							<label class="flex flex-col">
-								<input {...createWorld.fields.name.as('text')} placeholder="World Name" />
+								<input
+									use:focusMeActions
+									{...createWorld.fields.name.as('text')}
+									placeholder="World Name"
+								/>
 							</label>
 							<div class="w-full">
 								<button
@@ -290,7 +316,12 @@
 				{/if}
 			{:else}
 				<form {...createWorld}>
-					<input {...createWorld.fields.name.as('text')} placeholder="World identifier" />
+					bind:this={modal}
+					<input
+						use:focusMeActions
+						{...createWorld.fields.name.as('text')}
+						placeholder="World identifier"
+					/>
 				</form>
 			{/if}
 
@@ -317,17 +348,22 @@
 						class="absolute top-0 left-0 flex h-screen w-screen items-center justify-center bg-black/60"
 					>
 						<form
+							bind:this={modal}
 							{...createMetal}
 							onsubmit={() => {
 								metalValue = '';
 							}}
-							class="relative flex flex-col gap-4 rounded-2xl bg-white p-16"
+							class="relative z-99 flex flex-col gap-4 rounded-2xl bg-white p-16"
 						>
 							<button type="button" class="absolute top-1 right-1" onclick={() => (metalValue = '')}
 								>❌</button
 							>
 							<label class="flex flex-col">
-								<input {...createMetal.fields.name.as('text')} placeholder="Metal" />
+								<input
+									use:focusMeActions
+									{...createMetal.fields.name.as('text')}
+									placeholder="Metal"
+								/>
 							</label>
 							<div class="w-full">
 								<button
