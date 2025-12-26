@@ -5,5 +5,5 @@ import type { PageServerLoad } from "./$types";
 export const load: PageServerLoad = async ({ params }) => {
   const alloys = await db.select().from(AlloyDB);
 
-  return { alloys: alloys }
+  return { alloys: alloys };
 };

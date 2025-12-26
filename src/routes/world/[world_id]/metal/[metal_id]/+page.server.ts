@@ -5,6 +5,6 @@ export const load: PageServerLoad = async ({ params }) => {
 
   return {
     metal_id,
-    world_id
-  }
-}
+    world_id,
+  };
+};
