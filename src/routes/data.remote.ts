@@ -1,10 +1,10 @@
 import { command, form, query } from "$app/server";
 import { db } from "$lib/server/db";
 import { AlloyDB, inputItemDB, itemDB, metalGroupsDB, worldDB } from "$lib/server/db/schema";
-import { and, asc, desc, eq } from "drizzle-orm";
-import z from "zod";
+import { and, asc, eq } from "drizzle-orm";
+import * as v from "valibot";
 
-// TODO: Change from zod to valibot
+// TODO: Change from v.d to valibot
 
 export const getWorlds = query(async () => {
   const worlds = await db.select().from(worldDB).orderBy(asc(worldDB.name));
@@ -21,10 +21,15 @@ export const allItems = query(async () => {
   return items;
 });
 
+// v.object({
+//   worldId: v.string(),
+//   metalId: v.string(),
+// }),
+
 export const getItems = query(
-  z.object({
-    worldId: z.string(),
-    metalId: z.string(),
+  v.object({
+    worldId: v.string(),
+    metalId: v.string()
   }),
   async ({ worldId, metalId }) => {
     const items = await db
@@ -36,36 +41,35 @@ export const getItems = query(
   },
 );
 
-export const createWorld = form(z.object({ name: z.string().min(1) }), async ({ name }) => {
+export const createWorld = form(v.object({ name: v.pipe(v.string(), v.minLength(1)) }), async ({ name }) => {
   await db.insert(worldDB).values({ name: name });
   getWorlds().refresh();
 });
 
-export const createMetal = form(z.object({ name: z.string().min(1) }), async ({ name }) => {
+export const createMetal = form(v.object({ name: v.pipe(v.string(), v.minLength(1)) }), async ({ name }) => {
   await db.insert(metalGroupsDB).values({ name: name });
   getMetals().refresh();
 });
 
-const action = z
+const action = v
   .union([
-    z.number("-15"),
-    z.number("-9"),
-    z.number("-6"),
-    z.number("-3"),
-    z.number("2"),
-    z.number("7"),
-    z.number("13"),
-    z.number("16"),
+    v.number("-15"),
+    v.number("-9"),
+    v.number("-6"),
+    v.number("-3"),
+    v.number("2"),
+    v.number("7"),
+    v.number("13"),
+    v.number("16"),
   ])
-  .nullable();
 export const createItem = command(
-  z.object({
-    name: z.string().min(1),
-    metalID: z.string(),
-    worldID: z.string(),
-    itemInput: z.string(),
-    path: z.array(z.number()),
-    actions: z.tuple([action, action, action]),
+  v.object({
+    name: v.string(),
+    metalID: v.string(),
+    worldID: v.string(),
+    itemInput: v.string(),
+    path: v.array(v.number()),
+    actions: v.tuple([action, action, action]),
   }),
   async ({ name, worldID, metalID, itemInput, path, actions }) => {
     const [last, second, third] = actions;
@@ -82,7 +86,7 @@ export const createItem = command(
   },
 );
 
-export const removeItem = command(z.string(), async (itemID) => {
+export const removeItem = command(v.string(), async (itemID) => {
   await db.delete(itemDB).where(eq(itemDB.id, itemID));
 });
 
@@ -91,85 +95,22 @@ export const getInputItems = query(async () => {
   return inputItems;
 });
 
-export const bho = form(
-  z.object({
-    itemId: z.string(),
-    itemName: z.string(),
-    path: z.array(z.number()),
-    inputItem: z.string(),
-    worldId: z.string(),
-    metalId: z.string(),
-    lastAction: z.union([
-      z.number("-15"),
-      z.number("-9"),
-      z.number("-6"),
-      z.number("-3"),
-      z.number("2"),
-      z.number("7"),
-      z.number("13"),
-      z.number("16"),
-      z.number("0")
-    ]),
-    secondAction: z.union([
-      z.number("-15"),
-      z.number("-9"),
-      z.number("-6"),
-      z.number("-3"),
-      z.number("2"),
-      z.number("7"),
-      z.number("13"),
-      z.number("16"),
-      z.number("0")
-    ]),
-    thirdAction: z.union([
-      z.number("-15"),
-      z.number("-9"),
-      z.number("-6"),
-      z.number("-3"),
-      z.number("2"),
-      z.number("7"),
-      z.number("13"),
-      z.number("16"),
-      z.number("0")
-    ]),
-  }),
-  async ({
-    itemId,
-    itemName,
-    path,
-    inputItem,
-    worldId,
-    metalId,
-    lastAction,
-    secondAction,
-    thirdAction
-  }) => {
-    await db.update(itemDB).set({
-      name: itemName,
-      path: path,
-      inputItemName: inputItem,
-      lastAction: lastAction === 0 ? null : lastAction,
-      secondAction: secondAction === 0 ? null : secondAction,
-      thirdAction: thirdAction === 0 ? null : thirdAction
-    }).where(eq(itemDB.id, itemId));
-
-    await getItems({ worldId, metalId }).refresh();
-  },
-);
+const a = v.nullable(v.number());
 
 export const updateItem = command(
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    path: z.array(z.number()),
-    inputItem: z.string(),
-    actions: z.tuple([action, action, action]),
-    worldId: z.string(),
-    metalId: z.string(),
+  v.object({
+    id: v.string(),
+    name: v.string(),
+    path: v.array(v.number()),
+    inputItem: v.string(),
+    actions: v.tuple([a, a, a]),
   }),
-  async ({ id, name, path, inputItem, actions, worldId, metalId }) => {
+  async ({ id, name, path, inputItem, actions }) => {
     const [last, secondLast, thirdLast] = actions;
-    await db
+
+    console.log(actions);
+
+    const returning = await db
       .update(itemDB)
       .set({
         name: name,
@@ -179,9 +120,14 @@ export const updateItem = command(
         secondAction: secondLast,
         thirdAction: thirdLast,
       })
-      .where(eq(itemDB.id, id));
+      .where(eq(itemDB.id, id)).returning();
 
-    getItems({ metalId, worldId }).refresh();
+    const { world_id, metal_id } = returning[0];
+    await getItems({
+      worldId: world_id,
+      metalId: metal_id
+    }).refresh();
+
   },
 );
 
@@ -189,16 +135,16 @@ export const getAlloys = query(async () => {
   return await db.select().from(AlloyDB);
 });
 
-const alloyIngZod = z.object({
-  fluidName: z.string().min(1),
-  min: z.number().min(1).max(99),
-  max: z.number().min(1).max(99),
+const alloyIngZod = v.object({
+  fluidName: v.pipe(v.string(), v.minLength(1)),
+  min: v.pipe(v.number(), v.toMinValue(1), v.toMaxValue(99)),
+  max: v.pipe(v.number(), v.toMinValue(1), v.toMaxValue(99)),
 });
 
 export const createAlloyDB = command(
-  z.object({
-    name: z.string(),
-    ingredients: z.array(alloyIngZod).min(2),
+  v.object({
+    name: v.string(),
+    ingredients: v.pipe(v.array(alloyIngZod), v.minLength(2)),
   }),
   async ({ name, ingredients }) => {
     await db.insert(AlloyDB).values({

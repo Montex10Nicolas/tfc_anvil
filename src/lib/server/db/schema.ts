@@ -35,9 +35,9 @@ export const itemDB = sqliteTable("item", {
     .references(() => inputItemDB.name)
     .default("ingot")
     .notNull(),
-  lastAction: integer("last"),
-  secondAction: integer("second"),
-  thirdAction: integer("third"),
+  lastAction: integer("last").default(sql`null`),
+  secondAction: integer("second").default(sql`null`),
+  thirdAction: integer("third").default(sql`null`),
 });
 
 export const inputItemDB = sqliteTable("inputItem", {
