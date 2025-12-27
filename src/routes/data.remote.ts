@@ -4,6 +4,8 @@ import { AlloyDB, inputItemDB, itemDB, metalGroupsDB, worldDB } from "$lib/serve
 import { and, asc, desc, eq } from "drizzle-orm";
 import z from "zod";
 
+// TODO: Change from zod to valibot
+
 export const getWorlds = query(async () => {
   const worlds = await db.select().from(worldDB).orderBy(asc(worldDB.name));
   return worlds;
@@ -91,10 +93,68 @@ export const getInputItems = query(async () => {
 
 export const bho = form(
   z.object({
-    id: z.string(),
-    name: z.string(),
+    itemId: z.string(),
+    itemName: z.string(),
+    path: z.array(z.number()),
+    inputItem: z.string(),
+    worldId: z.string(),
+    metalId: z.string(),
+    lastAction: z.union([
+      z.number("-15"),
+      z.number("-9"),
+      z.number("-6"),
+      z.number("-3"),
+      z.number("2"),
+      z.number("7"),
+      z.number("13"),
+      z.number("16"),
+      z.number("0")
+    ]),
+    secondAction: z.union([
+      z.number("-15"),
+      z.number("-9"),
+      z.number("-6"),
+      z.number("-3"),
+      z.number("2"),
+      z.number("7"),
+      z.number("13"),
+      z.number("16"),
+      z.number("0")
+    ]),
+    thirdAction: z.union([
+      z.number("-15"),
+      z.number("-9"),
+      z.number("-6"),
+      z.number("-3"),
+      z.number("2"),
+      z.number("7"),
+      z.number("13"),
+      z.number("16"),
+      z.number("0")
+    ]),
   }),
-  async () => { },
+  async ({
+    itemId,
+    itemName,
+    path,
+    inputItem,
+    worldId,
+    metalId,
+    lastAction,
+    secondAction,
+    thirdAction
+  }) => {
+    await db.update(itemDB).set({
+      name: itemName,
+      path: path,
+      inputItemName: inputItem,
+      lastAction: lastAction === 0 ? null : lastAction,
+      secondAction: secondAction === 0 ? null : secondAction,
+      thirdAction: thirdAction === 0 ? null : thirdAction
+    }).where(eq(itemDB.id, itemId));
+
+    await getItems({ worldId, metalId }).refresh();
+  },
 );
 
 export const updateItem = command(
