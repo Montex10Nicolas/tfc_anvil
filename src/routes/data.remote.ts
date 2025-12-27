@@ -87,7 +87,11 @@ export const createItem = command(
 );
 
 export const removeItem = command(v.string(), async (itemID) => {
-  await db.delete(itemDB).where(eq(itemDB.id, itemID));
+  const items = await db.delete(itemDB).where(eq(itemDB.id, itemID)).returning();
+  const { world_id: worldId, metal_id: metalId } = items[0];
+  await getItems({
+    worldId, metalId
+  }).refresh();
 });
 
 export const getInputItems = query(async () => {

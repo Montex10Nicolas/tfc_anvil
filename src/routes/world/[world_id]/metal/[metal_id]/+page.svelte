@@ -11,8 +11,6 @@
   import { SvelteMap, SvelteSet } from "svelte/reactivity";
   import { onMount } from "svelte";
 
-  //TODO: Try remote functions
-
   let { data } = $props();
   let { world_id, metal_id } = $derived(data);
 
@@ -22,7 +20,6 @@
 
   let metalName = $derived(metals.find((v) => v.id === metal_id)!.name);
 
-  const hideArray: boolean[] = $state(new Array(items.length).fill(false));
   let modal = $state<HTMLElement>()!;
 
   let editing: {
@@ -270,7 +267,6 @@
               if (isPinned && !isGlobal) {
                 pinnedID.delete(itemID);
               } else if (!isGlobal) {
-                hideArray[index] = true;
                 await removeItem(itemID);
               } else if (isGlobal) {
                 const indexItem = globallyPinned.findIndex((value, index) => {
@@ -447,9 +443,7 @@
   {#if !groupped}
     <div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
       {#each sorted as item, index}
-        {#if !hideArray[index]}
-          {@render displayItem({ item, index })}
-        {/if}
+        {@render displayItem({ item, index })}
       {/each}
       <a href="/?world={world_id}&metal={metal_id}">
         <div class="relative flex h-full items-center gap-2 rounded-2xl bg-sky-300 p-6">
@@ -469,9 +463,7 @@
         </h1>
         <div class="m-4 grid grid-cols-3 gap-8">
           {#each grouppedItems as item, index}
-            {#if !hideArray[index]}
-              {@render displayItem({ item, index })}
-            {/if}
+            {@render displayItem({ item, index })}
           {/each}
           <a href="/?world={world_id}&metal={metal_id}&inputName={value.name}">
             <div
