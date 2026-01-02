@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     getWorlds,
     createWorld,
@@ -8,10 +7,11 @@
     createItem,
     getInputItems,
   } from "./data.remote";
+  import { SvelteSet } from "svelte/reactivity";
   import { useSearchParams } from "runed/kit";
-  import z from "zod";
-  import type { Action } from "svelte/action";
+  import * as v from "valibot";
   import { onClickOutside } from "runed";
+  import type { Attachment } from "svelte/attachments";
 
   let modal = $state<HTMLElement>()!;
   onClickOutside(
@@ -26,10 +26,19 @@
   );
 
   const params = useSearchParams(
-    z.object({
-      world: z.string().default(""),
-      metal: z.string().default(""),
-      inputName: z.enum(["ingot", "double ingot", "sheet", "double sheet", "rod"]).default("ingot"),
+    v.object({
+      world: v.optional(v.string(), ""),
+      metal: v.optional(v.string(), ""),
+      inputName: v.optional(
+        v.enum({
+          ingot: "ingot",
+          double_ingot: "double ingot",
+          sheet: "sheet",
+          double_sheet: "double sheet",
+          rod: "rod",
+        }),
+        "ingot",
+      ),
     }),
   );
 
@@ -90,9 +99,7 @@
 
   let queueDisplay = $derived.by(() => {
     let temp = [...queue];
-    let index = 0;
     for (const hit of [finishHits.thirdLast, finishHits.secondLast, finishHits.last]) {
-      index++;
       if (hit === 0) continue;
       if (hit !== -1) {
         temp.push(hit);
@@ -176,7 +183,7 @@
     const MAX = target + 16; // let the bfs go a bit over
 
     const queue: Array<{ value: number; path: number[] }> = [];
-    const visited = new Set<number>();
+    const visited = new SvelteSet<number>();
 
     queue.push({ value: 0, path: [] });
     visited.add(0);
@@ -200,13 +207,12 @@
     return null;
   }
 
-  const focusMeActions: Action = (node) => {
-    node.focus();
+  const focusMeAttach: Attachment = (node) => {
+    if (node.nodeName === "INPUT") {
+      const input = node as HTMLInputElement;
+      input.focus();
+    }
   };
-
-  onMount(() => {
-    htmlNameItem.focus();
-  });
 </script>
 
 <svelte:window
@@ -224,7 +230,7 @@
 <main class="flex min-h-screen w-screen flex-col items-center gap-4 bg-gray-800 py-4">
   <!-- Numbers -->
   <section
-    class="flex max-h-24 min-h-24 max-w-[30%] min-w-[30%] flex-col justify-around rounded-2xl bg-white py-2"
+    class="flex max-h-24 min-h-24 w-full flex-col justify-around rounded-2xl bg-white py-2 md:max-w-[30%]"
   >
     <div class="relative flex justify-between gap-x-1 overflow-scroll">
       <button
@@ -233,7 +239,7 @@
         }}>🔙</button
       >
       <div class="flex max-w-2/3 min-w-2/3 flex-wrap items-center gap-x-2 gap-y-0 overflow-scroll">
-        {#each queueDisplay as value}
+        {#each queueDisplay as value (`queueDisplay-${value}`)}
           <p class="text-md font-semibold">{value}</p>
         {/each}
       </div>
@@ -243,7 +249,7 @@
     <!-- Progress -->
     {#if toReach}
       <div class="flex items-center px-2">
-        {#each new Array(145) as _, index}
+        {#each new Array(145), index}
           {@const status = () => {
             if (current === index) {
               if (toReach.find((i) => i === index)) {
@@ -275,13 +281,19 @@
 
   <!-- Item info -->
   <section class="flex flex-col gap-y-4 rounded-2xl bg-white p-6 text-black">
-    <input bind:this={htmlNameItem} bind:value={itemName} class="rounded" placeholder="Item name" />
+    <input
+      bind:this={htmlNameItem}
+      bind:value={itemName}
+      class="rounded"
+      placeholder="Item name"
+      {@attach focusMeAttach}
+    />
     <div class="grid grid-cols-2 gap-4">
       {#if worldQuery}
         <label class="flex flex-col">
           World:
           <select class="cursor-pointer rounded" bind:value={worldValue} placeholder="World">
-            {#each worldQuery as { id, name }}
+            {#each worldQuery as { id, name } (id)}
               <option value={id}>{name}</option>
             {/each}
             <option value="new_one">Create new one</option>
@@ -304,7 +316,7 @@
               >
               <label class="flex flex-col">
                 <input
-                  use:focusMeActions
+                  {@attach focusMeAttach}
                   {...createWorld.fields.name.as("text")}
                   placeholder="World Name"
                 />
@@ -322,7 +334,7 @@
         <form {...createWorld}>
           bind:this={modal}
           <input
-            use:focusMeActions
+            {@attach focusMeAttach}
             {...createWorld.fields.name.as("text")}
             placeholder="World identifier"
           />
@@ -334,7 +346,7 @@
           <label class="flex flex-col">
             Metal
             <select class="cursor-pointer rounded" bind:value={metalValue}>
-              {#each metalQuery as { name, id }}
+              {#each metalQuery as { name, id } (id)}
                 <option value={id}>{name}</option>
               {/each}
               <option value="new_one">Create new one</option>
@@ -359,7 +371,7 @@
             >
             <label class="flex flex-col">
               <input
-                use:focusMeActions
+                {@attach focusMeAttach}
                 {...createMetal.fields.name.as("text")}
                 placeholder="Metal"
               />
@@ -377,7 +389,7 @@
       <label class="col-span-2 flex flex-col">
         Material:
         <select bind:value={inputItem} class="cursor-pointer rounded">
-          {#each inputItems as materials}
+          {#each inputItems as materials (materials)}
             <option value={materials.name}>
               {materials.name}
             </option>
@@ -415,7 +427,7 @@
       <div class="flex flex-col items-center gap-1">
         <p class="text-sm">To reach:</p>
         <div class="flex gap-3">
-          {#each toReach as end}
+          {#each toReach as end (`toReach-${end}`)}
             <div class="grid h-8 w-12 place-items-center rounded border text-lg font-semibold">
               <p>
                 {end}
@@ -432,7 +444,7 @@
           last
           <section>
             <select class="cursor-pointer rounded" bind:value={finishHits.last}>
-              {#each [0, -1, -15, 2, 7, 13, 16] as hit}
+              {#each [0, -1, -15, 2, 7, 13, 16] as hit (`last-hit-${hit}`)}
                 <option value={hit}>{hit === 0 ? "none" : hit === -1 ? "hit" : hit}</option>
               {/each}
             </select>
@@ -442,7 +454,7 @@
           second last
           <section>
             <select class="cursor-pointer rounded" bind:value={finishHits.secondLast}>
-              {#each [0, -1, -15, 2, 7, 13, 16] as hit}
+              {#each [0, -1, -15, 2, 7, 13, 16] as hit (`second-hit-${hit}`)}
                 <option value={hit}>{hit === 0 ? "none" : hit === -1 ? "hit" : hit}</option>
               {/each}
             </select>
@@ -452,7 +464,7 @@
           third last
           <section>
             <select class="cursor-pointer rounded" bind:value={finishHits.thirdLast}>
-              {#each [0, -1, -15, 2, 7, 13, 16] as hit}
+              {#each [0, -1, -15, 2, 7, 13, 16] as hit (`third-hit-${hit}`)}
                 <option value={hit}>{hit === 0 ? "none" : hit === -1 ? "hit" : hit}</option>
               {/each}
             </select>
@@ -463,20 +475,20 @@
 
     <div class="flex items-center gap-4">
       <div class="grid grid-cols-2 gap-2">
-        {#each possibility.filter((v) => v < 0) as anvilValue}
+        {#each possibility.filter((v) => v < 0) as anvilValue (`lessThan-${v}-${anvilValue}`)}
           <button class="border px-1 py-1" onclick={() => handleButtons(anvilValue)}
             >{anvilValue}</button
           >
         {/each}
       </div>
-      <div class="flex min-w-[150px] flex-col">
+      <div class="flex min-w-37.5 flex-col">
         <p class="text-center text-7xl font-bold">{current ?? 0}</p>
         <p class="flex flex-col text-center text-lg font-medium">
           {queue.length}<span class="text-xs font-light uppercase">Steps</span>
         </p>
       </div>
       <div class="grid grid-cols-2 gap-2">
-        {#each possibility.filter((v) => v > 0) as anvilValue}
+        {#each possibility.filter((v) => v > 0) as anvilValue (`greaterThan-${v}-${anvilValue}`)}
           <button class="border px-1 py-1" onclick={() => handleButtons(anvilValue)}
             >{anvilValue}</button
           >

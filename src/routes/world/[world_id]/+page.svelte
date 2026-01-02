@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { getMetals } from "../../data.remote";
 
@@ -13,8 +14,8 @@
     <p>Error...</p>
   {:else if metals.current}
     <div class="grid grid-cols-2 gap-4 p-4 md:grid-cols-3 lg:grid-cols-6">
-      {#each metals.current as metal}
-        <a href={`/world/${worldID}/metal/${metal.id}`}>
+      {#each metals.current as metal (metal.id)}
+        <a href={resolve(`/world/${worldID}/metal/${metal.id}`)}>
           <div
             class="h-24 w-48 place-content-center rounded-2xl bg-white text-center text-sm font-bold"
           >

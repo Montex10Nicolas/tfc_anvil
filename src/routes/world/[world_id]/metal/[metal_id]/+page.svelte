@@ -3,6 +3,7 @@
   import { onClickOutside } from "runed";
   import {
     getInputItems,
+    getItem,
     getItems,
     getMetals,
     removeItem,
@@ -10,6 +11,7 @@
   } from "../../../../data.remote";
   import { SvelteMap, SvelteSet } from "svelte/reactivity";
   import { onMount } from "svelte";
+  import { resolve } from "$app/paths";
 
   let { data } = $props();
   let { world_id, metal_id } = $derived(data);
@@ -49,7 +51,7 @@
   let pinnedAmount = new SvelteMap<string, number>();
 
   let sorted = $derived.by(() => {
-    const globallyPinnedID = new Set<string>();
+    const globallyPinnedID = new SvelteSet<string>();
     globallyPinned.map((v) => {
       globallyPinnedID.add(v.id);
     });
@@ -60,9 +62,9 @@
       return item;
     });
 
-    const sortedBy = sortInput.toLowerCase();
+    if (sortInput !== "") {
+      const sortedBy = sortInput.toLowerCase();
 
-    if (sortedBy !== "") {
       arr = arr.filter((v) => {
         if (v.inputItemName === sortedBy) {
           return v;
@@ -88,7 +90,7 @@
   );
 
   let ingotsNeededInMl = $derived.by(() => {
-    const itemsByMetal = new Map<string, number>();
+    const itemsByMetal = new SvelteMap<string, number>();
 
     const unifiedPinned = [...pinned, ...globallyPinned];
 
@@ -173,13 +175,19 @@
     filter += key;
   }
 
-  onMount(() => {
+  onMount(async () => {
     if (!localStorage) return;
     const itemsInStorage = localStorage.getItem("pinned_global");
     if (itemsInStorage === null) return [];
 
     const globalItems: Array<(typeof items)[0]> = JSON.parse(itemsInStorage);
-    globallyPinned = globalItems;
+    const ids: string[] = [];
+    for (const item of globalItems) {
+      ids.push(item.id);
+    }
+
+    const globally = await getItem({ ids });
+    globallyPinned = globally;
   });
 </script>
 
@@ -187,7 +195,6 @@
 
 {#snippet displayItem({
   item,
-  index = 0,
   isPinned,
   isGlobal,
 }: {
@@ -289,8 +296,8 @@
       </div>
 
       <div class="flex w-[80%] flex-wrap items-center gap-1 text-lg">
-        {#each path as value, index}
-          <div class="">
+        {#each path as value, index (`path-${value}-${index}`)}
+          <div>
             <p class="text-end text-[0.6rem]">{index + 1}</p>
             <p>{value}</p>
           </div>
@@ -306,7 +313,7 @@
               .slice(
                 0,
                 path.findIndex((value, index) => {
-                  if (value !== 16) return index;
+                  if (value !== path[0]) return index;
                 }),
               )
               .reduce((acc, cur) => acc + cur, 0)}
@@ -355,7 +362,7 @@
     : ''}"
 >
   <div class="m-4 flex items-center justify-between">
-    <a href="/world/{world_id}">
+    <a href={resolve("/world/{world_id}")}>
       <h1 class="cursor-pointer font-semibold text-violet-300">⬅️ Go back to metal selection</h1>
     </a>
     <h2 class="text-2xl font-bold text-white">{metalName}</h2>
@@ -365,7 +372,7 @@
       <span> Filter by Input Item: </span>
       <select bind:value={sortInput} class="cursor-pointer rounded font-semibold capitalize">
         <option value=""> none</option>
-        {#each inputItems as item}
+        {#each inputItems as item (`filter-${item.name}`)}
           <option value={item.name}>
             {item.name}
           </option>
@@ -398,7 +405,7 @@
             ? ingotsNeededInMl.size
             : 4} gap-x-2"
         >
-          {#each ingotsNeededInMl as [metalNamee, amount]}
+          {#each ingotsNeededInMl as [metalNamee, amount] (`ingotsneeded-${metalNamee}-${amount}`)}
             <div class="my-2 w-full rounded bg-white p-2 text-2xl font-bold">
               <p>{metalNamee}: {amount / 100}({amount}ml)</p>
             </div>
@@ -428,10 +435,10 @@
         </div>
       </div>
       <div class="grid grid-cols-{size > 3 ? 3 : size} gap-8">
-        {#each pinned as item, index}
+        {#each pinned as item, index (`pinned-${item.id}-${index}`)}
           {@render displayItem({ item, index, isPinned: true })}
         {/each}
-        {#each globallyPinned as item, index}
+        {#each globallyPinned as item, index (`globally-pinned-${item.id}-${index}`)}
           {@render displayItem({ item, index, isPinned: true, isGlobal: true })}
         {/each}
       </div>
@@ -442,10 +449,10 @@
 
   {#if !groupped}
     <div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
-      {#each sorted as item, index}
+      {#each sorted as item, index (`groupped-${item.id}-${index}`)}
         {@render displayItem({ item, index })}
       {/each}
-      <a href="/?world={world_id}&metal={metal_id}">
+      <a href={resolve("/?world={world_id}&metal={metal_id}")}>
         <div class="relative flex h-full items-center gap-2 rounded-2xl bg-sky-300 p-6">
           <span class="text-4xl">🆕</span>
           <p class="text-2xl font-bold">Create a new one</p>
@@ -453,7 +460,7 @@
       </a>
     </div>
   {:else}
-    {#each inputItems as value}
+    {#each inputItems as value (`groupped-${value.name}`)}
       {@const grouppedItems = sorted.filter((v) => {
         return v.inputItemName === value.name;
       })}
@@ -462,9 +469,10 @@
           {value.name}
         </h1>
         <div class="m-4 grid grid-cols-3 gap-8">
-          {#each grouppedItems as item, index}
+          {#each grouppedItems as item, index (`groupped-${item.id}-${index}`)}
             {@render displayItem({ item, index })}
           {/each}
+          <!-- eslint-disable-next-line -->
           <a href="/?world={world_id}&metal={metal_id}&inputName={value.name}">
             <div
               class="relative flex h-full items-center gap-2 rounded-2xl border bg-sky-300 p-6 shadow-2xl"
@@ -483,11 +491,6 @@
 {#if editing.editing}
   {@const item = editing.item}
   {#if item}
-    <pre>
-      <code>
-        {JSON.stringify(item, null, 2)}
-      </code>
-    </pre>
     <div
       class="absolute top-0 left-0 z-40 flex h-screen w-screen items-center justify-center bg-gray-950/80 text-black"
     >
@@ -499,13 +502,13 @@
         <h1>Editing <span class="font-black">{item.name}</span></h1>
         <input type="text" bind:value={item.name} class="rounded" />
         <select bind:value={item.inputItemName} class="rounded">
-          {#each inputItems as value}
+          {#each inputItems as value (`editing-${value.name}`)}
             <option>{value.name}</option>
           {/each}
         </select>
         <label>
           <div class="grid grid-cols-8 gap-4">
-            {#each editing.path as value, index}
+            {#each editing.path as value, index (`editing-path-${value}`)}
               <div class="text-md relative w-12 rounded border font-semibold">
                 <button
                   class="absolute -top-2 -right-0.5 z-40 cursor-pointer rounded-full bg-gray-900 p-0.5 text-center text-[0.40rem] hover:visible"
@@ -553,7 +556,7 @@
                 }
               }
             >
-              {#each [null, -15, -9, -6, -3, 2, 7, 13, 16] as value}
+              {#each [null, -15, -9, -6, -3, 2, 7, 13, 16] as value (`editing-last-${value}`)}
                 <option value={value}>{value}</option>
               {/each}
             </select>
@@ -576,7 +579,7 @@
                 }
               }
             >
-              {#each [null, -15, -9, -6, -3, 2, 7, 13, 16] as value}
+              {#each [null, -15, -9, -6, -3, 2, 7, 13, 16] as value (`editing-second-last-${value}`)}
                 <option value={value}>{value}</option>
               {/each}
             </select>
@@ -597,7 +600,7 @@
                 }
               }
             >
-              {#each [null, -15, -9, -6, -3, 2, 7, 13, 16] as value}
+              {#each [null, -15, -9, -6, -3, 2, 7, 13, 16] as value (`editing-third-last-${value}`)}
                 <option value={value}>{value}</option>
               {/each}
             </select>

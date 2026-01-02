@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../app.css";
-  import { page } from "$app/state";
   import favicon from "$lib/assets/favicon.svg";
+  import { resolve } from "$app/paths";
 
   let { children } = $props();
 </script>
@@ -12,11 +12,11 @@
 
 <section>
   <div class="flex min-h-8 justify-around bg-white py-2 text-3xl font-bold uppercase">
-    <a href="/">home</a>
-    <a href="/world">world</a>
-    <a href="/ores">ore</a>
-    <a href="/alloys">alloys</a>
-    <a href="/crops">crops</a>
+    <a href={resolve("/")}>home</a>
+    <a href={resolve("/world")}>world</a>
+    <a href={resolve("/ores")}>ore</a>
+    <a href={resolve("/alloys")}>alloys</a>
+    <a href={resolve("/crops")}>crops</a>
   </div>
   {@render children()}
 </section>

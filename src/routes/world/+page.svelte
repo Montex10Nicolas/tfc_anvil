@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { getWorlds } from "../data.remote";
 
   const worlds = getWorlds();
@@ -8,7 +9,7 @@
     if (!worlds.current) return;
 
     if (worlds.current.length === 1) {
-      goto(`/world/${worlds.current[0].id}`);
+      goto(resolve(`/world/${worlds.current[0].id}`));
     }
   });
 </script>
@@ -21,7 +22,7 @@
   {:else if worlds.current}
     <div class="grid grid-cols-{worlds.current.length > 3 ? 3 : worlds.current.length}">
       {#each worlds.current as { name, id } (id)}
-        <a href={`/world/${id}`}>
+        <a href={resolve(`/world/${id}`)}>
           <div class="grid place-items-center rounded-2xl bg-white px-12 py-32">
             <p class="text-4xl font-black">{name}</p>
           </div>

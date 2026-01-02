@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { alloyIngredient } from "$lib/server/db/schema.js";
-  import { _uint32 } from "zod/v4/core";
   import { createAlloyDB } from "../data.remote.js";
 
   const { data } = $props();
@@ -31,11 +30,15 @@
     return res;
   }
 
+  function getRandomId() {
+    return crypto.randomUUID();
+  }
+
   const defaultAlloy: DisplayAlloy = {
-    id: crypto.randomUUID(),
+    id: getRandomId(),
     name: alloys[0].name,
     ingredients: transformIngredients(alloys[0].ingredients),
-    amountDesired: 1,
+    amountDesired: 40,
   };
 
   const defaultIngredient = {
@@ -45,14 +48,7 @@
   };
 
   // How many to choose
-  let alloysToDisplay = $state<Array<typeof defaultAlloy>>([
-    {
-      id: crypto.randomUUID(),
-      name: alloys[0].name,
-      ingredients: transformIngredients(alloys[0].ingredients),
-      amountDesired: 1,
-    },
-  ]);
+  let alloysToDisplay = $state<Array<typeof defaultAlloy>>([defaultAlloy]);
 
   let mode = $state<"Calculate" | "Create">("Calculate");
   // Create
@@ -77,7 +73,7 @@
     </div>
     <hr class="mt-4" />
     {#if mode === "Calculate"}
-      {#each alloysToDisplay as selected, index}
+      {#each alloysToDisplay as selected, index (`${selected.id}-${index}`)}
         {@const wanted = selected.amountDesired}
         <div class="my-4 px-4 pb-4">
           <div class="around flex items-center justify-between">
@@ -97,12 +93,11 @@
                       });
                       if (found === undefined) return;
                       selected.name = found.name;
-                      selected.amountDesired = 0;
                       selected.ingredients = transformIngredients(found.ingredients);
                     }
                   }
                 >
-                  {#each alloys as alloy}
+                  {#each alloys as alloy (`alloy-select-${alloy.name}`)}
                     <option>
                       {alloy.name}
                     </option>
@@ -128,7 +123,7 @@
             >
           </div>
           {#if selected !== null}
-            {#each selected.ingredients as ingredient}
+            {#each selected.ingredients as ingredient, index (`ingredient-${ingredient.fluidName}-${index}`)}
               {@const ml = wanted * 100}
               {@const { fluidName, min, max } = ingredient}
               <div class="my-2 flex justify-around gap-4 text-2xl capitalize">
@@ -177,7 +172,7 @@
     {:else}
       <div class="flex flex-col gap-4 p-8">
         <input bind:value={alloyName} type="text" placeholder="Alloy name" />
-        {#each ingredients as ingredient, index}
+        {#each ingredients as ingredient, index (`create-${ingredient.fluidName}-${index}`)}
           <div class="flex gap-4">
             <label for="">
               Fluidname

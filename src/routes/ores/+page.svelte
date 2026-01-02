@@ -159,7 +159,7 @@
       </label>
     </div>
   </div>
-  <div class="flex justify-between rounded-2xl bg-white p-4 text-2xl">
+  <div class="justfy-between flex rounded-2xl bg-white p-4 text-2xl">
     <h2>
       {total}ml | {Math.floor(total / 100)}ingots | {total - Math.floor(total / 100) * 100}remaining
     </h2>

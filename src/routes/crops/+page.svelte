@@ -81,6 +81,7 @@
         arr = arr.sort((a, b) => {
           return a.nutrient > b.nutrient ? 1 : a.nutrient === b.nutrient ? 0 : -1;
         });
+        return arr;
       default:
         return arr;
     }
@@ -175,7 +176,7 @@
       </tr>
     </thead>
     <tbody class="m-4">
-      {#each sortedCrops as { name, hydration, nutrient, temperature }}
+      {#each sortedCrops as { name, hydration, nutrient, temperature } (name)}
         <tr
           class="m-4 grid grid-cols-4 items-center justify-between text-center font-semibold capitalize"
         >

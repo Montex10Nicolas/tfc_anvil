@@ -1,6 +1,13 @@
 import { command, form, query } from "$app/server";
 import { db } from "$lib/server/db";
-import { AlloyDB, inputItemDB, itemDB, metalGroupsDB, worldDB } from "$lib/server/db/schema";
+import {
+  AlloyDB,
+  inputItemDB,
+  itemDB,
+  metalGroupsDB,
+  worldDB,
+  type ItemDBSelect,
+} from "$lib/server/db/schema";
 import { and, asc, eq } from "drizzle-orm";
 import * as v from "valibot";
 
@@ -29,7 +36,7 @@ export const allItems = query(async () => {
 export const getItems = query(
   v.object({
     worldId: v.string(),
-    metalId: v.string()
+    metalId: v.string(),
   }),
   async ({ worldId, metalId }) => {
     const items = await db
@@ -41,27 +48,50 @@ export const getItems = query(
   },
 );
 
-export const createWorld = form(v.object({ name: v.pipe(v.string(), v.minLength(1)) }), async ({ name }) => {
-  await db.insert(worldDB).values({ name: name });
-  getWorlds().refresh();
-});
+export const getItem = query(
+  v.object({
+    ids: v.array(v.string()),
+  }),
+  async ({ ids }) => {
+    const items: ItemDBSelect[] = [];
+    ids.map(async (id) => {
+      const found = await db.query.itemDB.findFirst({
+        where: eq(itemDB.id, id),
+      });
+      if (found) {
+        items.push(found);
+      }
+    });
+    return items;
+  },
+);
 
-export const createMetal = form(v.object({ name: v.pipe(v.string(), v.minLength(1)) }), async ({ name }) => {
-  await db.insert(metalGroupsDB).values({ name: name });
-  getMetals().refresh();
-});
+export const createWorld = form(
+  v.object({ name: v.pipe(v.string(), v.minLength(1)) }),
+  async ({ name }) => {
+    await db.insert(worldDB).values({ name: name });
+    getWorlds().refresh();
+  },
+);
 
-const action = v
-  .union([
-    v.number("-15"),
-    v.number("-9"),
-    v.number("-6"),
-    v.number("-3"),
-    v.number("2"),
-    v.number("7"),
-    v.number("13"),
-    v.number("16"),
-  ])
+export const createMetal = form(
+  v.object({ name: v.pipe(v.string(), v.minLength(1)) }),
+  async ({ name }) => {
+    await db.insert(metalGroupsDB).values({ name: name });
+    getMetals().refresh();
+  },
+);
+
+const action = v.union([
+  v.number("-15"),
+  v.number("-9"),
+  v.number("-6"),
+  v.number("-3"),
+  v.number("2"),
+  v.number("7"),
+  v.number("13"),
+  v.number("16"),
+]);
 export const createItem = command(
   v.object({
     name: v.string(),
@@ -90,7 +120,8 @@ export const removeItem = command(v.string(), async (itemID) => {
   const items = await db.delete(itemDB).where(eq(itemDB.id, itemID)).returning();
   const { world_id: worldId, metal_id: metalId } = items[0];
   await getItems({
-    worldId, metalId
+    worldId,
+    metalId,
   }).refresh();
 });
 
@@ -124,14 +155,14 @@ export const updateItem = command(
         secondAction: secondLast,
         thirdAction: thirdLast,
       })
-      .where(eq(itemDB.id, id)).returning();
+      .where(eq(itemDB.id, id))
+      .returning();
 
     const { world_id, metal_id } = returning[0];
     await getItems({
       worldId: world_id,
-      metalId: metal_id
+      metalId: metal_id,
     }).refresh();
-
   },
 );
 
