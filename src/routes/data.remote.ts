@@ -39,10 +39,18 @@ export const getItems = query(
     metalId: v.string(),
   }),
   async ({ worldId, metalId }) => {
+    const worlds = await db.select().from(worldDB).where(eq(worldDB.name, worldId));
+    if (worlds.length === 0 || worlds.length > 1) {
+      return [];
+    }
+    const metals = await db.select().from(metalGroupsDB).where(eq(metalGroupsDB.name, metalId));
+    if (metals.length === 0 || metals.length > 1) {
+      return [];
+    }
     const items = await db
       .select()
       .from(itemDB)
-      .where(and(eq(itemDB.world_id, worldId), eq(itemDB.metal_id, metalId)))
+      .where(and(eq(itemDB.world_id, worlds[0].id), eq(itemDB.metal_id, metals[0].id)))
       .orderBy(asc(itemDB.name));
     return items;
   },
@@ -103,6 +111,7 @@ export const createItem = command(
   }),
   async ({ name, worldID, metalID, itemInput, path, actions }) => {
     const [last, second, third] = actions;
+
     await db.insert(itemDB).values({
       name: name,
       world_id: worldID,
@@ -143,8 +152,6 @@ export const updateItem = command(
   async ({ id, name, path, inputItem, actions }) => {
     const [last, secondLast, thirdLast] = actions;
 
-    console.log(actions);
-
     const returning = await db
       .update(itemDB)
       .set({
@@ -159,10 +166,13 @@ export const updateItem = command(
       .returning();
 
     const { world_id, metal_id } = returning[0];
-    await getItems({
+    console.log("Should be updating");
+    const a = await getItems({
       worldId: world_id,
       metalId: metal_id,
     }).refresh();
+
+    console.log(a);
   },
 );
 

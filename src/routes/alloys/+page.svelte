@@ -87,9 +87,9 @@
                     () => {
                       return selected.name;
                     },
-                    (v: string) => {
+                    (hello: string) => {
                       const found = alloys.find((value) => {
-                        return value.name === v;
+                        return value.name === hello;
                       });
                       if (found === undefined) return;
                       selected.name = found.name;

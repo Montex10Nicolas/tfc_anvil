@@ -58,8 +58,9 @@
     secondLast: 0,
     thirdLast: 0,
   });
+
   let worldValue = $state(
-    params.world.length ? params.world : worldQuery.length ? worldQuery[0].id : "",
+    params.world.length ? params.world : worldQuery.length ? worldQuery[0].name : "",
   );
 
   let metalValue = $state(params.metal);
@@ -135,10 +136,19 @@
 
   async function itemCreation() {
     const { last, secondLast, thirdLast } = finishHits;
+
+    const worldFound = worldQuery.find((world) => {
+      if (world.name === worldValue) return world;
+    })!;
+
+    const metalFound = metalQuery.find((metal) => {
+      if (metal.name === metalValue) return metal;
+    })!;
+
     await createItem({
       name: itemName,
-      metalID: metalValue,
-      worldID: worldValue,
+      metalID: metalFound.id,
+      worldID: worldFound.id,
       itemInput: inputItem,
       path: queueDisplay,
       actions: [last, secondLast, thirdLast],
@@ -230,7 +240,7 @@
 <main class="flex min-h-screen w-screen flex-col items-center gap-4 bg-gray-800 py-4">
   <!-- Numbers -->
   <section
-    class="flex max-h-24 min-h-24 w-full flex-col justify-around rounded-2xl bg-white py-2 md:max-w-[30%]"
+    class="flex max-h-24 min-h-24 w-[72%] flex-col justify-around rounded-2xl bg-white py-2 sm:w-[50%] lg:max-w-[30%]"
   >
     <div class="relative flex justify-between gap-x-1 overflow-scroll">
       <button
@@ -239,7 +249,7 @@
         }}>🔙</button
       >
       <div class="flex max-w-2/3 min-w-2/3 flex-wrap items-center gap-x-2 gap-y-0 overflow-scroll">
-        {#each queueDisplay as value (`queueDisplay-${value}`)}
+        {#each queueDisplay as value, idx (`queueDisplay-${idx}-${value}`)}
           <p class="text-md font-semibold">{value}</p>
         {/each}
       </div>
@@ -294,7 +304,7 @@
           World:
           <select class="cursor-pointer rounded" bind:value={worldValue} placeholder="World">
             {#each worldQuery as { id, name } (id)}
-              <option value={id}>{name}</option>
+              <option value={name}>{name}</option>
             {/each}
             <option value="new_one">Create new one</option>
           </select>
@@ -347,7 +357,7 @@
             Metal
             <select class="cursor-pointer rounded" bind:value={metalValue}>
               {#each metalQuery as { name, id } (id)}
-                <option value={id}>{name}</option>
+                <option value={name}>{name}</option>
               {/each}
               <option value="new_one">Create new one</option>
             </select>
@@ -427,7 +437,7 @@
       <div class="flex flex-col items-center gap-1">
         <p class="text-sm">To reach:</p>
         <div class="flex gap-3">
-          {#each toReach as end (`toReach-${end}`)}
+          {#each toReach as end, idx (`toReach--${idx}-${end}`)}
             <div class="grid h-8 w-12 place-items-center rounded border text-lg font-semibold">
               <p>
                 {end}
@@ -475,7 +485,7 @@
 
     <div class="flex items-center gap-4">
       <div class="grid grid-cols-2 gap-2">
-        {#each possibility.filter((v) => v < 0) as anvilValue (`lessThan-${v}-${anvilValue}`)}
+        {#each possibility.filter((x) => x < 0) as anvilValue, idx (`lessThan-${idx}-${anvilValue}`)}
           <button class="border px-1 py-1" onclick={() => handleButtons(anvilValue)}
             >{anvilValue}</button
           >
@@ -488,7 +498,7 @@
         </p>
       </div>
       <div class="grid grid-cols-2 gap-2">
-        {#each possibility.filter((v) => v > 0) as anvilValue (`greaterThan-${v}-${anvilValue}`)}
+        {#each possibility.filter((x) => x > 0) as anvilValue, idx (`greaterThan-${idx}-${anvilValue}`)}
           <button class="border px-1 py-1" onclick={() => handleButtons(anvilValue)}
             >{anvilValue}</button
           >

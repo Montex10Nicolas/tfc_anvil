@@ -15,7 +15,7 @@
   {:else if metals.current}
     <div class="grid grid-cols-2 gap-4 p-4 md:grid-cols-3 lg:grid-cols-6">
       {#each metals.current as metal (metal.id)}
-        <a href={resolve(`/world/${worldID}/metal/${metal.id}`)}>
+        <a href={resolve(`/world/${worldID}/metal/${metal.name}`)}>
           <div
             class="h-24 w-48 place-content-center rounded-2xl bg-white text-center text-sm font-bold"
           >

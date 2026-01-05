@@ -16,11 +16,11 @@
   let { data } = $props();
   let { world_id, metal_id } = $derived(data);
 
-  const items = $derived(await getItems({ worldId: world_id, metalId: metal_id }));
+  const items = await getItems({ worldId: world_id, metalId: metal_id });
   const inputItems = await getInputItems();
   const metals = await getMetals();
 
-  let metalName = $derived(metals.find((v) => v.id === metal_id)!.name);
+  let metalName = $derived(metals.find((v) => v.name === metal_id)!.name);
 
   let modal = $state<HTMLElement>()!;
 
@@ -230,6 +230,7 @@
                 if (value.id === metal_id) return value.name;
               })?.name
             : metalName}
+          ({pathTotal})
         </p>
         <div>
           {#if !isPinned}
@@ -251,22 +252,14 @@
           {/if}
           <button
             class="cursor-pointer"
-            onclick={() =>
-              (editing = {
-                item: {
-                  id: itemID,
-                  name,
-                  path,
-                  inputItemName,
-                  world_id,
-                  metal_id,
-                  lastAction,
-                  secondAction,
-                  thirdAction,
-                },
+            onclick={() => {
+              console.log("Editing now");
+              editing = {
+                item: { ...item },
                 editing: true,
-                path: path,
-              })}>✏️</button
+                path: [...item.path],
+              };
+            }}>✏️</button
           >
           <button
             class="cursor-pointer"
@@ -302,7 +295,6 @@
             <p>{value}</p>
           </div>
         {/each}
-        <p>({pathTotal})</p>
       </div>
       <div class="flex justify-between">
         <div class="flex gap-8 text-center text-2xl font-bold">
@@ -349,11 +341,12 @@
 
 <!-- debugging -->
 <!-- <div class="absolute right-0 bottom-0 m-1 border border-black bg-white p-8"> -->
-<!-- 	<dev class="flex flex-col"> -->
-<!-- 		<code> {JSON.stringify(pinned, null, 2)}</code> -->
-<!-- 		<code> {JSON.stringify(globallyPinned, null, 2)}</code> -->
-<!-- 		<code> {JSON.stringify(ingotsNeededInMl, null, 2)}</code> -->
-<!-- 	</dev> -->
+<!--   <dev class="flex flex-col"> -->
+<!--     <!-- <code> {JSON.stringify(pinned, null, 2)}</code> -->
+<!--     <!-- <code> {JSON.stringify(globallyPinned, null, 2)}</code> -->
+<!--     <!-- <code> {JSON.stringify(ingotsNeededInMl, null, 2)}</code> -->
+<!--     <code>{JSON.stringify(editing, null, 2)}</code> -->
+<!--   </dev> -->
 <!-- </div> -->
 
 <main
@@ -362,7 +355,7 @@
     : ''}"
 >
   <div class="m-4 flex items-center justify-between">
-    <a href={resolve("/world/{world_id}")}>
+    <a href={resolve(`/world/${world_id}`)}>
       <h1 class="cursor-pointer font-semibold text-violet-300">⬅️ Go back to metal selection</h1>
     </a>
     <h2 class="text-2xl font-bold text-white">{metalName}</h2>
@@ -452,7 +445,7 @@
       {#each sorted as item, index (`groupped-${item.id}-${index}`)}
         {@render displayItem({ item, index })}
       {/each}
-      <a href={resolve("/?world={world_id}&metal={metal_id}")}>
+      <a href="/?world={world_id}&metal={metal_id}">
         <div class="relative flex h-full items-center gap-2 rounded-2xl bg-sky-300 p-6">
           <span class="text-4xl">🆕</span>
           <p class="text-2xl font-bold">Create a new one</p>
@@ -478,7 +471,9 @@
               class="relative flex h-full items-center gap-2 rounded-2xl border bg-sky-300 p-6 shadow-2xl"
             >
               <span class="text-4xl">🆕</span>
-              <p class="text-2xl font-bold">Create a new one</p>
+              <p class="text-2xl font-bold">
+                New <span class="capitalize">{value.name}</span> item
+              </p>
             </div>
           </a>
         </div>
@@ -489,46 +484,49 @@
 
 <!-- Editing -->
 {#if editing.editing}
-  {@const item = editing.item}
-  {#if item}
+  {@const itemEditing = editing.item}
+  {@const pathEditing = editing.path}
+  {#if itemEditing}
     <div
       class="absolute top-0 left-0 z-40 flex h-screen w-screen items-center justify-center bg-gray-950/80 text-black"
     >
       <form
-        {...updateItem}
         bind:this={modal}
         class="flex max-w-1/3 min-w-1/3 flex-col gap-4 rounded-2xl bg-white p-8"
       >
-        <h1>Editing <span class="font-black">{item.name}</span></h1>
-        <input type="text" bind:value={item.name} class="rounded" />
-        <select bind:value={item.inputItemName} class="rounded">
+        <h1>Editing <span class="font-black">{itemEditing.name}</span></h1>
+        <input type="text" bind:value={itemEditing.name} class="rounded" />
+        <select bind:value={itemEditing.inputItemName} class="rounded">
           {#each inputItems as value (`editing-${value.name}`)}
             <option>{value.name}</option>
           {/each}
         </select>
         <label>
-          <div class="grid grid-cols-8 gap-4">
-            {#each editing.path as value, index (`editing-path-${value}`)}
-              <div class="text-md relative w-12 rounded border font-semibold">
+          <div class="grid grid-cols-6 gap-4">
+            {#each pathEditing as pathValue, index (`change-path-${itemEditing.id}-${index}`)}
+              <div class="text-md relative flex w-16 gap-1 rounded border font-semibold">
                 <button
-                  class="absolute -top-2 -right-0.5 z-40 cursor-pointer rounded-full bg-gray-900 p-0.5 text-center text-[0.40rem] hover:visible"
+                  class="cursor-pointer bg-gray-900 p-0.5 text-center text-[0.40rem] hover:visible"
                   onclick={() => {
+                    // Something is wrong here to check
                     editing.path.splice(index, 1);
                   }}
                 >
                   ❌
                 </button>
                 <input
-                  class="max-w-full"
+                  class="max-w-full border-0 bg-transparent"
                   type="number"
                   bind:value={
-                    () => value,
+                    () => pathValue,
                     (newValue) => {
                       editing.path[index] = newValue;
                     }
                   }
                 />
               </div>
+            {:else}
+              <h1>wtf</h1>
             {/each}
             <button
               class="w-10 cursor-pointer rounded border p-2 font-black"
@@ -609,11 +607,11 @@
         <button
           onclick={() => {
             updateItem({
-              id: item.id,
-              name: item.name,
+              id: itemEditing.id,
+              name: itemEditing.name,
               path: editing.path,
-              inputItem: item.inputItemName,
-              actions: [item.lastAction, item.secondAction, item.thirdAction],
+              inputItem: itemEditing.inputItemName,
+              actions: [itemEditing.lastAction, itemEditing.secondAction, itemEditing.thirdAction],
             });
             editing.editing = false;
           }}

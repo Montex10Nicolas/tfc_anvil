@@ -9,7 +9,7 @@
     if (!worlds.current) return;
 
     if (worlds.current.length === 1) {
-      goto(resolve(`/world/${worlds.current[0].id}`));
+      goto(resolve(`/world/${worlds.current[0].name}`));
     }
   });
 </script>
