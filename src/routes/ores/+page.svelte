@@ -1,10 +1,11 @@
 <script lang="ts">
-  type OresType = "small" | "poor" | "normal" | "rich";
+  // Idk if this will ever be relevant
+  // type OresType = "small" | "poor" | "normal" | "rich";
 
   const oresAmount = { smallAmount: 10, poorAmount: 15, normalAmount: 25, richAmount: 35 };
 
   const initialOres = {
-    name: "Ore name here",
+    name: "",
     individual: {
       small: 0,
       poor: 0,
@@ -30,7 +31,11 @@
 
       const stackValue = stackAmount[index];
 
-      const amount =
+      const individualAmount = iSmall + iPoor + iNormal + iRich;
+      const stackedAmount = (sSmall + sPoor + sNormal + sRich) * stackValue;
+      const totalAmount = individualAmount + stackedAmount;
+
+      const amountInMl =
         iSmall * smallAmount +
         iNormal * normalAmount +
         iPoor * poorAmount +
@@ -39,10 +44,25 @@
         sNormal * stackValue * normalAmount +
         sPoor * stackValue * poorAmount +
         sRich * stackValue * richAmount;
-      return amount;
+      return [amountInMl, totalAmount] as const;
     });
   });
 </script>
+
+{#snippet thingy(
+  ores: typeof initialOres.individual,
+  { index, stacked }: { index?: number; stacked?: boolean },
+)}
+  {#each Object.entries(ores) as [key]}
+    {@const params = key as "poor" | "small" | "normal" | "rich"}
+    <div class="flex justify-between">
+      <span class="font-semibold capitalize">
+        {key}: {stacked ? ores[params] * stackAmount[index!] : null}
+      </span>
+      <input type="number" min="0" bind:value={ores[params]} />
+    </div>
+  {/each}
+{/snippet}
 
 <main class="flex min-h-screen flex-col gap-2 bg-gray-800 px-4 pt-2">
   <div class="">
@@ -59,12 +79,21 @@
       {@const mbAmount = result[index]}
       <div class="flex flex-col gap-2 rounded-2xl bg-white p-4">
         <label class="flex justify-between gap-4">
-          <input type="text" class="w-full rounded" bind:value={ore.name} />
+          <input
+            placeholder="Change me :("
+            type="text"
+            class="w-full rounded"
+            bind:value={ore.name}
+            {@attach (node) => {
+              if (index === 0) node.focus();
+            }}
+          />
           <button
             onclick={() => {
               const arr = ores.filter((_, idx) => idx !== index);
               ores = arr;
             }}
+            tabindex="-1"
             class="cursor-pointer rounded bg-red-800 px-2 py-1 font-semibold text-white uppercase"
             >Remove</button
           >
@@ -72,37 +101,26 @@
         <div class="flex gap-4">
           <div>
             <h3>Individual</h3>
-            {#each Object.entries(ore.individual) as [key]}
-              {@const individual = ore.individual}
-              {@const params = key as "poor" | "small" | "normal" | "rich"}
-              <div class="flex justify-between">
-                {key}:
-                <input type="number" min="0" bind:value={individual[params]} />
-              </div>
-            {/each}
+            {@render thingy(ore.individual, {})}
           </div>
           <div>
             <div class="flex justify-between">
               <h3>Stack</h3>
               <input type="number" class="font-semibold!" bind:value={stackAmount[index]} />
             </div>
-            {#each Object.entries(ore.stack) as [key]}
-              {@const stack = ore.stack}
-              {@const params = key as "poor" | "small" | "normal" | "rich"}
-              <div class="flex justify-between">
-                {key}:
-                <input type="number" min="0" bind:value={stack[params]} />
-              </div>
-            {/each}
+            {@render thingy(ore.stack, { index, stacked: true })}
           </div>
         </div>
         <hr class="my-1" />
-        <div class="flex justify-around">
+        <div class="flex justify-around font-bold">
           <p>
-            {mbAmount}mb
+            {mbAmount[0]}mb
           </p>
           <p>
-            {Math.floor(mbAmount / 100)}ingots ({mbAmount % 100})
+            {Math.floor(mbAmount[0] / 100)}ingots ({mbAmount[0] % 100})
+          </p>
+          <p>
+            {mbAmount[1]} individual piece{mbAmount[1] > 0 ? "s" : ""}
           </p>
         </div>
       </div>
