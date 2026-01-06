@@ -1,168 +1,112 @@
 <script lang="ts">
-  let oreMLAmount = $state({
-    small: 10,
-    poor: 15,
-    normal: 25,
-    rich: 35,
-  });
+  type OresType = "small" | "poor" | "normal" | "rich";
 
-  let oreAmount = $state({
-    small: 0,
-    poor: 0,
-    normal: 0,
-    rich: 0,
-  });
+  const oresAmount = { smallAmount: 10, poorAmount: 15, normalAmount: 25, richAmount: 35 };
 
-  let stackAmount = $state(128);
-  let stacks = $state({
-    small: 0,
-    poor: 0,
-    normal: 0,
-    rich: 0,
-  });
-
-  let total = $derived(
-    oreMLAmount.small * oreAmount.small +
-      oreMLAmount.poor * oreAmount.poor +
-      oreMLAmount.normal * oreAmount.normal +
-      oreMLAmount.rich * oreAmount.rich,
-  );
-
-  function resetAll() {
-    oreAmount = {
+  const initialOres = {
+    name: "Ore name here",
+    individual: {
       small: 0,
       poor: 0,
       normal: 0,
       rich: 0,
-    };
-    stacks = oreAmount;
-  }
+    },
+    stack: {
+      small: 0,
+      poor: 0,
+      normal: 0,
+      rich: 0,
+    },
+  };
+
+  let ores = $state([initialOres]);
+  let stackAmount = $state([128]);
+
+  let result = $derived.by(() => {
+    return ores.map((ore, index) => {
+      const { smallAmount, poorAmount, normalAmount, richAmount } = oresAmount;
+      const { small: iSmall, poor: iPoor, normal: iNormal, rich: iRich } = ore.individual;
+      const { small: sSmall, poor: sPoor, normal: sNormal, rich: sRich } = ore.stack;
+
+      const stackValue = stackAmount[index];
+
+      const amount =
+        iSmall * smallAmount +
+        iNormal * normalAmount +
+        iPoor * poorAmount +
+        iRich * richAmount +
+        sSmall * stackValue * smallAmount +
+        sNormal * stackValue * normalAmount +
+        sPoor * stackValue * poorAmount +
+        sRich * stackValue * richAmount;
+      return amount;
+    });
+  });
 </script>
 
-<main class="flex min-h-screen w-screen flex-col items-center justify-center gap-6 bg-black/80">
-  <div class="relative flex justify-between rounded-2xl bg-white p-8 text-lg">
-    <div class="absolute top-2 right-2">
-      <button class="cursor-pointer" onclick={resetAll}>🧹</button>
-    </div>
-    <div>
-      <p class="font-bold">OreToML:</p>
-      <div class="flex flex-col justify-between capitalize">
-        <label class="flex items-center justify-around"
-          >small: <input type="number" min="0" bind:value={oreMLAmount.small} />ml</label
-        >
-        <label class="flex items-center justify-around">
-          poor: <input type="number" min="0" bind:value={oreMLAmount.poor} />ml</label
-        >
-        <label class="flex items-center justify-around">
-          normal: <input type="number" min="0" bind:value={oreMLAmount.normal} />ml</label
-        >
-        <label class="flex items-center justify-around">
-          rich: <input type="number" min="0" bind:value={oreMLAmount.rich} />ml</label
-        >
-      </div>
-    </div>
-    <div>
-      <p class="font-bold">Amounts:</p>
-      <div class="flex flex-col justify-between capitalize">
-        <label class="flex items-center justify-around"
-          >small: <input type="number" min="0" bind:value={oreAmount.small} />qt</label
-        >
-        <label class="flex items-center justify-around">
-          poor: <input type="number" min="0" bind:value={oreAmount.poor} />qt</label
-        >
-        <label class="flex items-center justify-around">
-          normal: <input type="number" min="0" bind:value={oreAmount.normal} />qt</label
-        >
-        <label class="flex items-center justify-around">
-          rich: <input type="number" min="0" bind:value={oreAmount.rich} />qt</label
-        >
-      </div>
-    </div>
-    <div>
-      <p class="font-bold">
-        Stacks
-        <input
-          class="w-1/6! rounded! border-2! bg-gray-800! px-2! py-1! text-center! text-white!"
-          type="number"
-          bind:value={
-            () => stackAmount,
-            (value) => {
-              oreAmount.small = stacks.small * value;
-              oreAmount.normal = stacks.normal * value;
-              oreAmount.poor = stacks.poor * value;
-              oreAmount.rich = stacks.rich * value;
-              stackAmount = value;
-            }
-          }
-        />
-      </p>
-      <label class="flex items-center justify-around"
-        >small:
-
-        <input
-          type="number"
-          min="0"
-          bind:value={
-            () => stacks.small,
-            (value) => {
-              stacks.small = value;
-              oreAmount.small = value * stackAmount;
-            }
-          }
-        />
-        qt</label
-      >
-      <label class="flex items-center justify-around">
-        poor:
-        <input
-          type="number"
-          min="0"
-          bind:value={
-            () => stacks.poor,
-            (value) => {
-              stacks.poor = value;
-              oreAmount.poor = value * stackAmount;
-            }
-          }
-        />
-      </label>
-
-      <label class="flex items-center justify-around"
-        >Normal:
-
-        <input
-          type="number"
-          min="0"
-          bind:value={
-            () => stacks.normal,
-            (value) => {
-              stacks.normal = value;
-              oreAmount.normal = value * stackAmount;
-            }
-          }
-        />
-        qt</label
-      >
-      <label class="flex items-center justify-around">
-        Rich:
-        <input
-          type="number"
-          min="0"
-          bind:value={
-            () => stacks.rich,
-            (value) => {
-              stacks.rich = value;
-              oreAmount.rich = value * stackAmount;
-            }
-          }
-        />
-      </label>
-    </div>
+<main class="flex min-h-screen flex-col gap-2 bg-gray-800 px-4 pt-2">
+  <div class="">
+    <button
+      class="mx-auto w-full cursor-pointer rounded bg-sky-700 py-2 text-xs font-bold text-white uppercase"
+      onclick={() => {
+        ores.push(initialOres);
+        stackAmount.push(128);
+      }}>New one</button
+    >
   </div>
-  <div class="justfy-between flex rounded-2xl bg-white p-4 text-2xl">
-    <h2>
-      {total}ml | {Math.floor(total / 100)}ingots | {total - Math.floor(total / 100) * 100}remaining
-    </h2>
+  <div class="grid grid-cols-{ores.length < 3 ? ores.length : 3} gap-4">
+    {#each ores as ore, index}
+      {@const mbAmount = result[index]}
+      <div class="flex flex-col gap-2 rounded-2xl bg-white p-4">
+        <label class="flex justify-between gap-4">
+          <input type="text" class="w-full rounded" bind:value={ore.name} />
+          <button
+            onclick={() => {
+              const arr = ores.filter((_, idx) => idx !== index);
+              ores = arr;
+            }}
+            class="cursor-pointer rounded bg-red-800 px-2 py-1 font-semibold text-white uppercase"
+            >Remove</button
+          >
+        </label>
+        <div class="flex gap-4">
+          <div>
+            <h3>Individual</h3>
+            {#each Object.entries(ore.individual) as [key]}
+              {@const individual = ore.individual}
+              {@const params = key as "poor" | "small" | "normal" | "rich"}
+              <div class="flex justify-between">
+                {key}:
+                <input type="number" min="0" bind:value={individual[params]} />
+              </div>
+            {/each}
+          </div>
+          <div>
+            <div class="flex justify-between">
+              <h3>Stack</h3>
+              <input type="number" class="font-semibold!" bind:value={stackAmount[index]} />
+            </div>
+            {#each Object.entries(ore.stack) as [key]}
+              {@const stack = ore.stack}
+              {@const params = key as "poor" | "small" | "normal" | "rich"}
+              <div class="flex justify-between">
+                {key}:
+                <input type="number" min="0" bind:value={stack[params]} />
+              </div>
+            {/each}
+          </div>
+        </div>
+        <hr class="my-1" />
+        <div class="flex justify-around">
+          <p>
+            {mbAmount}mb
+          </p>
+          <p>
+            {Math.floor(mbAmount / 100)}ingots ({mbAmount % 100})
+          </p>
+        </div>
+      </div>
+    {/each}
   </div>
 </main>
 
@@ -173,5 +117,9 @@
     -moz-appearance: textfield;
     width: 30%;
     border-style: none;
+    text-align: end;
+  }
+  h3 {
+    font-weight: 800;
   }
 </style>
