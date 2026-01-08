@@ -2,8 +2,15 @@
   import type { alloyIngredient } from "$lib/server/db/schema.js";
   import { createAlloyDB } from "../data.remote.js";
 
+  // FIXME: If you are already on the page everything is fine
+  // but if you try to reload it will 500 Internal Error
+
   const { data } = $props();
-  let { alloys } = data;
+  const alloysData = () => data;
+  const { alloys: temp } = $derived(alloysData());
+  const alloys = $derived(
+    temp.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0)),
+  );
   // in ingots (1 ingot = 100ml)
 
   type DisplayAlloy = {
@@ -98,7 +105,7 @@
                   }
                 >
                   {#each alloys as alloy (`alloy-select-${alloy.name}`)}
-                    <option>
+                    <option class="capitalize">
                       {alloy.name}
                     </option>
                   {/each}
@@ -126,11 +133,27 @@
             {#each selected.ingredients as ingredient, index (`ingredient-${ingredient.fluidName}-${index}`)}
               {@const ml = wanted * 100}
               {@const { fluidName, min, max } = ingredient}
+              {@const minMl = parseInt(((ml / 100) * min).toFixed(0))}
+              {@const maxMl = parseInt(((ml / 100) * max).toFixed(0))}
               <div class="my-2 flex justify-around gap-4 text-2xl capitalize">
                 <p>{fluidName} ({min}%-{max}%)</p>
-                <p>
-                  {((ml / 100) * min).toFixed(0)}-{((ml / 100) * max).toFixed(0)}ml
-                </p>
+                <div>
+                  <p>
+                    {((ml / 100) * min).toFixed(0)}-{((ml / 100) * max).toFixed(0)}ml
+                  </p>
+                  <input
+                    type="range"
+                    step="100"
+                    list="markers-{fluidName}-{index}"
+                    min={minMl}
+                    max={maxMl}
+                  />
+                  <datalist id="markers-{fluidName}-{index}">
+                    {#each new Array((maxMl - minMl) / 100 + 1), index}
+                      <option value={minMl + index * 100}></option>
+                    {/each}
+                  </datalist>
+                </div>
                 <label class="flex items-center gap-3 text-sm">
                   How many Ingot do you have
                   <input
