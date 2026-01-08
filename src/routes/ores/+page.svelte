@@ -76,7 +76,8 @@
   </div>
   <div class="grid grid-cols-{ores.length < 3 ? ores.length : 3} gap-4">
     {#each ores as ore, index}
-      {@const mbAmount = result[index]}
+      {@const [mbAmount, totalItems] = result[index]}
+      {@const ingots = Math.floor(mbAmount / 100)}
       <div class="flex flex-col gap-2 rounded-2xl bg-white p-4">
         <label class="flex justify-between gap-4">
           <input
@@ -112,15 +113,24 @@
           </div>
         </div>
         <hr class="my-1" />
-        <div class="flex justify-around font-bold">
+        <div class="{ores.length > 2 ? 'grid grid-cols-3' : 'flex'}  justify-around font-bold">
           <p>
-            {mbAmount[0]}mb
+            {mbAmount}mb
           </p>
           <p>
-            {Math.floor(mbAmount[0] / 100)}ingots ({mbAmount[0] % 100})
+            {ingots}<small>ingots</small> ({mbAmount % 100})
           </p>
           <p>
-            {mbAmount[1]} individual piece{mbAmount[1] > 0 ? "s" : ""}
+            {totalItems}items
+          </p>
+          <p>
+            {Math.floor(ingots / 64)} - {ingots % 64}<small>64s</small>
+          </p>
+          <p>
+            {Math.floor(ingots / 256)}<small>256s</small>
+          </p>
+          <p>
+            {Math.floor(ingots / 1280)}<small>1280s</small>
           </p>
         </div>
       </div>

@@ -166,13 +166,10 @@ export const updateItem = command(
       .returning();
 
     const { world_id, metal_id } = returning[0];
-    console.log("Should be updating");
-    const a = await getItems({
+    await getItems({
       worldId: world_id,
       metalId: metal_id,
     }).refresh();
-
-    console.log(a);
   },
 );
 
