@@ -16,9 +16,20 @@
   let { data } = $props();
   let { world_id, metal_id } = $derived(data);
 
-  const items = await getItems({ worldId: world_id, metalId: metal_id });
   const inputItems = await getInputItems();
   const metals = await getMetals();
+
+  const test = async () => await getItems({ worldId: world_id, metalId: metal_id });
+
+  function addInformationToItems(value: ItemDBSelect[]) {
+    let newItems: Array<ItemDBSelect & { deleted: boolean }> = [];
+    value.map((item) => {
+      newItems.push({ ...item, deleted: false });
+    });
+    return newItems;
+  }
+
+  let items = $state(addInformationToItems(await test()));
 
   let metalName = $derived(metals.find((v) => v.name === metal_id)!.name);
 
@@ -46,6 +57,8 @@
     },
   );
 
+  let askForConfirm = $state("");
+
   let pinnedID = new SvelteSet<string>();
   let globallyPinned: Array<(typeof items)[0]> = $state([]);
   let pinnedAmount = new SvelteMap<string, number>();
@@ -57,17 +70,17 @@
     });
 
     let arr = items.filter((item) => {
-      const { id } = item;
-      if (globallyPinnedID.has(id) || pinnedID.has(id)) return;
+      const { id, deleted } = item;
+      if (globallyPinnedID.has(id) || pinnedID.has(id) || deleted) return;
       return item;
     });
 
     if (sortInput !== "") {
       const sortedBy = sortInput.toLowerCase();
 
-      arr = arr.filter((v) => {
-        if (v.inputItemName === sortedBy) {
-          return v;
+      arr = arr.filter((item) => {
+        if (item.inputItemName === sortedBy) {
+          return item;
         }
       });
     }
@@ -186,7 +199,7 @@
       ids.push(item.id);
     }
 
-    const globally = await getItem({ ids });
+    const globally = addInformationToItems(await getItem({ ids }));
     globallyPinned = globally;
   });
 </script>
@@ -253,7 +266,6 @@
           <button
             class="cursor-pointer"
             onclick={() => {
-              console.log("Editing now");
               editing = {
                 item: { ...item },
                 editing: true,
@@ -261,30 +273,55 @@
               };
             }}>✏️</button
           >
-          <button
-            class="cursor-pointer"
-            onclick={async () => {
-              if (isPinned && !isGlobal) {
-                pinnedID.delete(itemID);
-              } else if (!isGlobal) {
-                await removeItem(itemID);
-              } else if (isGlobal) {
-                const indexItem = globallyPinned.findIndex((value, index) => {
-                  if (value.id === itemID) {
-                    return index;
-                  }
-                });
+          <span class="relative">
+            {#if askForConfirm === itemID}
+              <div
+                class="absolute bottom-6 -left-22 z-90 flex min-w-48 flex-col gap-1 rounded border border-black bg-white p-2"
+              >
+                <p>Are you sure you want to delete?</p>
+                <div class="flex justify-around">
+                  <button
+                    class="cursor-pointer rounded bg-red-300 p-2 font-semibold uppercase"
+                    onclick={() => {
+                      askForConfirm = "";
+                    }}>no</button
+                  >
+                  <button
+                    class="cursor-pointer rounded bg-green-300 p-2 font-semibold uppercase"
+                    onclick={async () => {
+                      await removeItem(itemID);
+                      askForConfirm = "";
+                      item.deleted = true;
+                    }}>yes</button
+                  >
+                </div>
+              </div>
+            {/if}
+            <button
+              class="cursor-pointer"
+              onclick={async () => {
+                if (isPinned && !isGlobal) {
+                  pinnedID.delete(itemID);
+                } else if (!isGlobal) {
+                  askForConfirm = itemID;
+                } else if (isGlobal) {
+                  const indexItem = globallyPinned.findIndex((value, index) => {
+                    if (value.id === itemID) {
+                      return index;
+                    }
+                  });
 
-                const copy = [...globallyPinned];
-                copy.splice(indexItem, 1);
-                globallyPinned = copy;
-                localStorage.setItem("pinned_global", JSON.stringify(copy));
-                pinnedID.delete(itemID);
-              }
-            }}
-          >
-            ❌
-          </button>
+                  const copy = [...globallyPinned];
+                  copy.splice(indexItem, 1);
+                  globallyPinned = copy;
+                  localStorage.setItem("pinned_global", JSON.stringify(copy));
+                  pinnedID.delete(itemID);
+                }
+              }}
+            >
+              ❌
+            </button>
+          </span>
         </div>
       </div>
 
