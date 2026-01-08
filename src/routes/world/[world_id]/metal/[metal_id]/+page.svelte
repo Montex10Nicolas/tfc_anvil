@@ -437,7 +437,7 @@
         >
           {#each ingotsNeededInMl as [metalNamee, amount] (`ingotsneeded-${metalNamee}-${amount}`)}
             <div class="my-2 w-full rounded bg-white p-2 text-2xl font-bold">
-              <p>{metalNamee}: {amount / 100}({amount}ml)</p>
+              <p>{metalNamee}: {amount / 100}<small>ingot</small></p>
             </div>
           {/each}
         </div>
@@ -477,6 +477,7 @@
   {/if}
   <!-- end pinned -->
 
+  <!-- Main List -->
   {#if !groupped}
     <div class="mx-4 mt-4 grid grid-cols-3 gap-8 pb-8">
       {#each sorted as item, index (`groupped-${item.id}-${index}`)}
