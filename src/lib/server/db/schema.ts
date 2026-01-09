@@ -46,6 +46,7 @@ export const inputItemDB = sqliteTable("inputItem", {
   inMillibuckets: integer("inMillibuckets").notNull(),
 });
 
+// Min and Max are the %
 export type alloyIngredient = {
   fluidName: string;
   min: number;
