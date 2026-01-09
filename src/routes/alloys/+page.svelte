@@ -1,17 +1,13 @@
 <script lang="ts">
   import type { alloyIngredient } from "$lib/server/db/schema.js";
+  import { onMount } from "svelte";
   import { createAlloyDB } from "../data.remote.js";
 
-  // FIXME: If you are already on the page everything is fine
-  // but if you try to reload it will 500 Internal Error
-
   const { data } = $props();
-  const alloysData = () => data;
-  const { alloys: temp } = $derived(alloysData());
   const alloys = $derived(
-    temp.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0)),
+    data.alloys.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0)),
   );
-  // in ingots (1 ingot = 100ml)
+  $inspect(alloys);
 
   type DisplayAlloy = {
     id: `${string}-${string}-${string}-${string}`;
@@ -41,12 +37,13 @@
     return crypto.randomUUID();
   }
 
-  const defaultAlloy: DisplayAlloy = {
+  let defaultAlloy: DisplayAlloy = $state.raw({
     id: getRandomId(),
-    name: alloys[0].name,
-    ingredients: transformIngredients(alloys[0].ingredients),
+    name: "",
+    ingredients: [],
     amountDesired: 40,
-  };
+  });
+  $inspect(defaultAlloy, "Default");
 
   const defaultIngredient = {
     fluidName: "",
@@ -55,7 +52,9 @@
   };
 
   // How many to choose
-  let alloysToDisplay = $state<Array<typeof defaultAlloy>>([defaultAlloy]);
+  let alloysToDisplay = $state<Array<typeof defaultAlloy>>([]);
+
+  $inspect(alloysToDisplay);
 
   let mode = $state<"Calculate" | "Create">("Calculate");
   // Create
@@ -70,6 +69,18 @@
     alloyName = "";
     ingredients = [{ ...defaultIngredient }, { ...defaultIngredient }];
   }
+
+  onMount(() => {
+    if (!alloys || alloys.length === 0) {
+      return;
+    }
+    defaultAlloy = {
+      ...defaultAlloy,
+      name: alloys[0].name,
+      ingredients: transformIngredients(alloys[0].ingredients),
+    };
+    alloysToDisplay.push(defaultAlloy);
+  });
 </script>
 
 <main class="min-h-screen w-full bg-black/80 p-4">
