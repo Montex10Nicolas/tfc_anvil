@@ -21,7 +21,7 @@
     const res: AlloyToDisplay[] = [];
     for (const alloy of alloydb) {
       const a: IngredientDisplay[] = [];
-      const w = 500;
+      const w = 40;
       let sum = 0;
       for (const ingred of alloy.ingredients!) {
         const ingots = (w / 100) * ingred.min;
@@ -101,7 +101,9 @@
                 list="ingot-steps-{ingredient.fluidName}"
                 type="range"
                 min={minIg}
-                max={maxIg}
+                max={maxIg - ingredient.ingotsToUse > al.amountRemaining
+                  ? ingredient.ingotsToUse + al.amountRemaining
+                  : maxIg}
                 step="1"
               />
               <datalist id="ingot-steps-{ingredient.fluidName}">
@@ -109,7 +111,12 @@
                   <option value={minIg + index + 1}></option>
                 {/each}
               </datalist>
-              <button onclick={() => (ingredient.ingotsToUse = 0)}>Clear</button>
+              <button
+                onclick={() => {
+                  ingredient.ingotsToUse = 0;
+                  handleWanted(al, false);
+                }}>Clear</button
+              >
             {/if}
           </div>
         </div>
