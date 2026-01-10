@@ -8,6 +8,7 @@ import {
   worldDB,
   type ItemDBSelect,
 } from "$lib/server/db/schema";
+import { error } from "@sveltejs/kit";
 import { and, asc, eq } from "drizzle-orm";
 import * as v from "valibot";
 
@@ -177,7 +178,7 @@ export const getAlloys = query(async () => {
   return await db.select().from(AlloyDB);
 });
 
-const alloyIngZod = v.object({
+const alloyIngVB = v.object({
   fluidName: v.pipe(v.string(), v.minLength(1)),
   min: v.pipe(v.number(), v.toMinValue(1), v.toMaxValue(99)),
   max: v.pipe(v.number(), v.toMinValue(1), v.toMaxValue(99)),
@@ -186,9 +187,15 @@ const alloyIngZod = v.object({
 export const createAlloyDB = command(
   v.object({
     name: v.string(),
-    ingredients: v.pipe(v.array(alloyIngZod), v.minLength(2)),
+    ingredients: v.pipe(v.array(alloyIngVB), v.minLength(2)),
   }),
   async ({ name, ingredients }) => {
+    const isValid = ingredients.filter((ingredient) => {
+      if (ingredient.max < ingredient.min) return ingredient;
+    }).length;
+    if (!isValid) {
+      error(400, "Some fluid max is smaller than min");
+    }
     await db.insert(AlloyDB).values({
       name: name,
       ingredients: ingredients,

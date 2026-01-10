@@ -5,7 +5,6 @@
   const alloyDB = async () => await getAlloys();
 
   type IngredientDisplay = alloyIngredient & {
-    isRestricted: boolean;
     ingotsToUse: number;
   };
 
@@ -17,33 +16,45 @@
     amountRemaining: number;
   };
 
+  const DEFAULT_WANTED = 400;
+
   function addInformationToAlloy(alloydb: AlloyDBSelect[]): AlloyToDisplay[] {
     const res: AlloyToDisplay[] = [];
     for (const alloy of alloydb) {
-      const a: IngredientDisplay[] = [];
-      const w = 40;
+      const tempIngredient: IngredientDisplay[] = [];
+      const w = DEFAULT_WANTED;
       let sum = 0;
-      for (const ingred of alloy.ingredients!) {
-        const ingots = (w / 100) * ingred.min;
+      for (const ingredient of alloy.ingredients!) {
+        const ingots = Math.ceil((w / 100) * ingredient.min);
+        // console.log(alloy.name);
+        // console.table(ingredient);
+        // console.log(ingots);
         sum += ingots;
-        a.push({
-          ...ingred,
+        tempIngredient.push({
+          ...ingredient,
           ingotsToUse: ingots,
-          isRestricted: false,
         });
       }
       res.push({
         name: alloy.name,
-        ingredients: a,
+        ingredients: tempIngredient,
         amountWanted: w,
         amountRemaining: w - sum,
       });
     }
     return res;
   }
+  let alloys = $derived(addInformationToAlloy(await alloyDB()));
+  let listOfAlloy = $state([alloys[0], alloys[1]]);
 
-  let alloys = $state(addInformationToAlloy(await alloyDB()));
-  let al = $state(alloys[5]);
+  let creating = $state(true);
+  let alloyCreation = $state({
+    name: "",
+    ingredients: [
+      { fluidName: "", min: 0, max: 0 },
+      { fluidName: "", min: 0, max: 0 },
+    ],
+  });
 
   function handleWanted(al: AlloyToDisplay, reset: boolean) {
     let sum = 0;
@@ -59,78 +70,155 @@
   }
 </script>
 
-<main>
-  <select bind:value={al}>
-    {#each alloys as alloy}
-      <option value={alloy}>{alloy.name}</option>
-    {/each}
-  </select>
-  <div>
-    <p>{al.name}</p>
-    <p>({al.amountRemaining})</p>
-    <div class="flex flex-col gap-8">
-      {#each al.ingredients as ingredient}
-        {@const wanted = al.amountWanted}
-        {@const min = ingredient.min}
-        {@const max = ingredient.max}
-        {@const minIg = Math.ceil((wanted / 100) * min)}
-        {@const maxIg = Math.floor((wanted / 100) * max)}
-        <div class="flex gap-8">
-          <p>{ingredient.fluidName}</p>
-          <p>{ingredient.min}</p>
-          <p>{ingredient.max}</p>
-          <div>
-            <p>Ing: {ingredient.ingotsToUse}</p>
-            {#if minIg === maxIg}
-              <p>{minIg}</p>
-            {:else}
+<main class="relative min-h-screen w-full bg-gray-800">
+  {#if !creating}
+    <div class="absolute top-5 right-5 rounded-2xl bg-amber-100 p-2 text-3xl">
+      <button
+        class="cursor-pointer"
+        onclick={() => {
+          creating = true;
+        }}
+      >
+        🆕
+      </button>
+    </div>
+    <div class="mx-auto w-[80%] py-2">
+      <button
+        class="w-full cursor-pointer rounded bg-sky-400 py-1 font-bold text-white uppercase"
+        onclick={() => {
+          listOfAlloy.push(alloys[0]);
+        }}>New One</button
+      >
+    </div>
+    <div class="mx-auto grid w-[80%] grid-cols-2 gap-4 py-2">
+      {#each listOfAlloy as al, index}
+        <div class="rounded bg-white p-8">
+          <div class="flex flex-col gap-1">
+            <select class="rounded capitalize" bind:value={listOfAlloy[index]}>
+              {#each alloys as alloy}
+                <option class="capitalize" value={alloy}>{alloy.name}</option>
+              {/each}
+            </select>
+            <label class="flex flex-col" for="alloy-{index}">
+              Ingots wanted
               <input
+                id="alloy-{index}"
+                class="rounded"
+                type="number"
                 bind:value={
-                  () => ingredient.ingotsToUse,
+                  () => al.amountWanted,
                   (value) => {
-                    const diff = value - ingredient.ingotsToUse;
-                    if (diff > al.amountRemaining) {
-                      ingredient.ingotsToUse = ingredient.ingotsToUse + al.amountRemaining;
-                    } else {
-                      ingredient.ingotsToUse = value;
-                    }
-
-                    handleWanted(al, false);
+                    al.amountWanted = value;
+                    handleWanted(al, true);
                   }
                 }
-                list="ingot-steps-{ingredient.fluidName}"
-                type="range"
-                min={minIg}
-                max={maxIg - ingredient.ingotsToUse > al.amountRemaining
-                  ? ingredient.ingotsToUse + al.amountRemaining
-                  : maxIg}
-                step="1"
               />
-              <datalist id="ingot-steps-{ingredient.fluidName}">
-                {#each new Array(maxIg - minIg), index}
-                  <option value={minIg + index + 1}></option>
-                {/each}
-              </datalist>
-              <button
-                onclick={() => {
-                  ingredient.ingotsToUse = 0;
-                  handleWanted(al, false);
-                }}>Clear</button
-              >
-            {/if}
+            </label>
+            <button
+              onclick={() => {
+                const sliced = listOfAlloy.filter((al, idx) => {
+                  if (idx !== index) return al;
+                });
+                listOfAlloy = sliced;
+              }}
+              class="cursor-pointer rounded bg-red-700 px-2 py-2 font-bold text-white uppercase"
+              >Remove</button
+            >
+            <p class="text-xl">{al.amountRemaining} ingots left</p>
+          </div>
+          <!-- Display -->
+          <div>
+            <div class="flex flex-col gap-8">
+              {#each al.ingredients as ingredient}
+                {@const wanted = al.amountWanted}
+                {@const min = ingredient.min}
+                {@const max = ingredient.max}
+                {@const minIg = Math.ceil((wanted / 100) * min)}
+                {@const maxIg = Math.floor((wanted / 100) * max)}
+                <div class="flex gap-4 text-lg capitalize">
+                  <div>
+                    <p>{ingredient.fluidName}</p>
+                    <p>{min}%-{max}%</p>
+                  </div>
+                  <div>
+                    {#if minIg === maxIg}
+                      <p>{minIg}</p>
+                    {:else}
+                      <p>{ingredient.ingotsToUse}</p>
+                      <input
+                        bind:value={
+                          () => ingredient.ingotsToUse,
+                          (value) => {
+                            const diff = value - ingredient.ingotsToUse;
+                            if (diff > al.amountRemaining) {
+                              ingredient.ingotsToUse = ingredient.ingotsToUse + al.amountRemaining;
+                            } else {
+                              ingredient.ingotsToUse = value;
+                            }
+
+                            handleWanted(al, false);
+                          }
+                        }
+                        list="ingot-steps-{ingredient.fluidName}"
+                        type="range"
+                        min={minIg}
+                        max={maxIg - ingredient.ingotsToUse > al.amountRemaining
+                          ? ingredient.ingotsToUse + al.amountRemaining
+                          : maxIg}
+                        step="1"
+                      />
+                      <datalist id="ingot-steps-{ingredient.fluidName}">
+                        {#each new Array(maxIg - minIg), index}
+                          <option value={minIg + index + 1}></option>
+                        {/each}
+                      </datalist>
+                      <button
+                        onclick={() => {
+                          ingredient.ingotsToUse = 0;
+                          handleWanted(al, false);
+                        }}>Clear</button
+                      >
+                    {/if}
+                  </div>
+                </div>
+              {/each}
+            </div>
           </div>
         </div>
+      {:else}
+        <h1 class="text-4xl text-white">No one is here :(</h1>
       {/each}
     </div>
-    <input
-      type="number"
-      bind:value={
-        () => al.amountWanted,
-        (value) => {
-          al.amountWanted = value;
-          handleWanted(al, true);
-        }
-      }
-    />
-  </div>
+  {:else}
+    <form class="mx-auto w-[80%] py-2">
+      <div class="w-full rounded bg-white px-8 py-4">
+        <label class="flex flex-col" for="">
+          <input type="text" placeholder="Alloy Name" bind:value={alloyCreation.name} />
+        </label>
+        <div class="mt-4 grid grid-cols-2 gap-2">
+          {#each alloyCreation.ingredients as ingredient}
+            <input
+              placeholder="Ingredient Name"
+              class="col-span-2"
+              type="text"
+              bind:value={ingredient.fluidName}
+            />
+            <label class="flex flex-col" for="">
+              min
+              <input type="number" bind:value={ingredient.min} />
+            </label>
+            <label class="flex flex-col" for="">
+              max
+              <input type="number" bind:value={ingredient.max} />
+            </label>
+            <hr class="col-span-2 mb-2" />
+          {/each}
+        </div>
+        <button
+          class="w-full cursor-pointer rounded bg-green-600 py-2 font-bold text-black uppercase"
+          >Create</button
+        >
+      </div>
+    </form>
+  {/if}
 </main>
