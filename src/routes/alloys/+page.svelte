@@ -16,7 +16,7 @@
     amountRemaining: number;
   };
 
-  const DEFAULT_WANTED = 400;
+  const DEFAULT_WANTED = 40;
 
   function addInformationToAlloy(alloydb: AlloyDBSelect[]): AlloyToDisplay[] {
     const res: AlloyToDisplay[] = [];
