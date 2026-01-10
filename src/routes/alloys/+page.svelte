@@ -26,9 +26,6 @@
       let sum = 0;
       for (const ingredient of alloy.ingredients!) {
         const ingots = Math.ceil((w / 100) * ingredient.min);
-        // console.log(alloy.name);
-        // console.table(ingredient);
-        // console.log(ingots);
         sum += ingots;
         tempIngredient.push({
           ...ingredient,
@@ -135,6 +132,7 @@
                 {@const max = ingredient.max}
                 {@const minIg = Math.ceil((wanted / 100) * min)}
                 {@const maxIg = Math.floor((wanted / 100) * max)}
+                {@const totalSteps = maxIg - minIg}
                 <div class="flex gap-4 text-lg capitalize">
                   <div>
                     <p>{ingredient.fluidName}</p>
@@ -143,7 +141,7 @@
                   <div>
                     {#if minIg === maxIg}
                       <p>{minIg}</p>
-                    {:else}
+                    {:else if ingredient}
                       <p>{ingredient.ingotsToUse}</p>
                       <input
                         bind:value={
@@ -168,7 +166,7 @@
                         step="1"
                       />
                       <datalist id="ingot-steps-{ingredient.fluidName}">
-                        {#each new Array(maxIg - minIg), index}
+                        {#each new Array(totalSteps > 0 ? totalSteps : 0), index}
                           <option value={minIg + index + 1}></option>
                         {/each}
                       </datalist>
