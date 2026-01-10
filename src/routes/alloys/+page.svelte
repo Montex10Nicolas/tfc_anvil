@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { AlloyDBSelect, alloyIngredient } from "$lib/server/db/schema";
-  import { getAlloys } from "../data.remote";
+  import { createAlloyDB, getAlloys } from "../data.remote";
 
   const alloyDB = async () => await getAlloys();
 
@@ -47,7 +47,7 @@
   let alloys = $derived(addInformationToAlloy(await alloyDB()));
   let listOfAlloy = $state([alloys[0], alloys[1]]);
 
-  let creating = $state(true);
+  let creating = $state(false);
   let alloyCreation = $state({
     name: "",
     ingredients: [
@@ -190,26 +190,34 @@
       {/each}
     </div>
   {:else}
-    <form class="mx-auto w-[80%] py-2">
+    <div class="absolute top-5 right-5 rounded-2xl bg-amber-100 p-2 text-3xl">
+      <button class="cursor-pointer" onclick={() => (creating = false)}> 🔙 </button>
+    </div>
+    <form {...createAlloyDB} class="mx-auto w-[80%] py-2">
       <div class="w-full rounded bg-white px-8 py-4">
         <label class="flex flex-col" for="">
-          <input type="text" placeholder="Alloy Name" bind:value={alloyCreation.name} />
+          <input {...createAlloyDB.fields.name.as("text")} placeholder="Alloy Name" />
         </label>
         <div class="mt-4 grid grid-cols-2 gap-2">
-          {#each alloyCreation.ingredients as ingredient}
+          {#each createAlloyDB.fields.ingredients.issues() as issue}
+            <p class="text-red">{issue.message}</p>
+          {/each}
+          {#each alloyCreation.ingredients as ingredient, index}
             <input
               placeholder="Ingredient Name"
               class="col-span-2"
-              type="text"
-              bind:value={ingredient.fluidName}
+              {...createAlloyDB.fields.ingredients[index].fluidName.as("text")}
             />
             <label class="flex flex-col" for="">
               min
-              <input type="number" bind:value={ingredient.min} />
+              <input
+                bind:value={ingredient.min}
+                {...createAlloyDB.fields.ingredients[index].min.as("number")}
+              />
             </label>
             <label class="flex flex-col" for="">
               max
-              <input type="number" bind:value={ingredient.max} />
+              <input {...createAlloyDB.fields.ingredients[index].max.as("number")} />
             </label>
             <hr class="col-span-2 mb-2" />
           {/each}
