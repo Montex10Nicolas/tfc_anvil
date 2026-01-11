@@ -55,7 +55,7 @@
         return 0;
       }
 
-      if (upOrDown === "desc") {
+      if (upOrDown === "asc") {
         if (aValue > bValue) {
           return 1;
         }
@@ -124,9 +124,9 @@
   <span>{upOrDown == "asc" ? "⬆️" : "⬇️"}</span>
 {/snippet}
 
-<main class="w-screen">
+<main class="w-screen bg-gray-800 text-white">
   <table class="w-full p-12">
-    <thead class="m-4 text-center">
+    <thead class="m-4 bg-gray-950 text-center">
       <tr class="m-4 grid grid-cols-4 items-center justify-between text-lg font-black capitalize">
         <td class="flex items-center justify-center gap-3">
           <button
