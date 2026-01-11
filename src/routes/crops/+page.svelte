@@ -4,10 +4,10 @@
   type Order =
     | "none"
     | "name"
-    | "temperature-min"
-    | "temperature-max"
-    | "hydration-min"
-    | "hydration-max"
+    | "temperature"
+    | "temperature"
+    | "hydration"
+    | "hydration"
     | "nutrient";
 
   interface Crop {
@@ -24,7 +24,7 @@
   }
   const { crops } = crop as { crops: Crop[] };
 
-  let order: Order = $state("none");
+  let order: [Order, "min" | "max" | null] = $state(["none", null]);
   let upOrDown: "asc" | "desc" = $state("asc");
 
   let filter = $state("");
@@ -39,52 +39,36 @@
             }
           });
 
-    if (order === "none") return arr;
-    switch (order) {
-      case "temperature-min":
-        arr = arr.sort((a, b) => {
-          if (upOrDown === "asc") {
-            return a.temperature.min - b.temperature.min;
-          } else {
-            return b.temperature.min - a.temperature.min;
-          }
-        });
-        return arr;
-      case "temperature-max":
-        arr = arr.sort((a, b) => {
-          if (upOrDown === "asc") {
-            return a.temperature.max - b.temperature.max;
-          } else {
-            return b.temperature.max - a.temperature.max;
-          }
-        });
-        return arr;
-      case "hydration-min":
-        arr = arr.sort((a, b) => {
-          if (upOrDown === "asc") {
-            return a.hydration.min - b.hydration.min;
-          } else {
-            return b.hydration.min - a.hydration.min;
-          }
-        });
-        return arr;
-      case "hydration-max":
-        arr = arr.sort((a, b) => {
-          if (upOrDown === "asc") {
-            return a.hydration.max - b.hydration.max;
-          } else {
-            return b.hydration.max - a.hydration.max;
-          }
-        });
-        return arr;
-      case "nutrient":
-        arr = arr.sort((a, b) => {
-          return a.nutrient > b.nutrient ? 1 : a.nutrient === b.nutrient ? 0 : -1;
-        });
-        return arr;
-      default:
-        return arr;
-    }
+    if (order[0] === "none") return arr;
+    const key = order[0];
+    const minMax = order[1];
+    const filtered = arr.sort((aCrop, bCrop) => {
+      let aValue: string | number;
+      let bValue: string | number;
+      if (key === "name" || key === "nutrient") {
+        aValue = aCrop[key];
+        bValue = bCrop[key];
+      } else if (minMax !== null) {
+        aValue = aCrop[key][minMax];
+        bValue = bCrop[key][minMax];
+      } else {
+        return 0;
+      }
+
+      if (upOrDown === "desc") {
+        if (aValue > bValue) {
+          return 1;
+        }
+        return -1;
+      } else {
+        if (aValue < bValue) {
+          return 1;
+        }
+        return -1;
+      }
+    });
+
+    return filtered;
   });
 
   function switchUpDown() {
@@ -120,32 +104,67 @@
     }
     filter += key;
   }
+
+  function changeOrder(newOrder: Order, minMax: "min" | "max" | null = null) {
+    if (order[0] !== newOrder) {
+      upOrDown = "desc";
+    } else {
+      if (upOrDown === "desc") {
+        order = ["none", null];
+        return;
+      }
+    }
+    order = [newOrder, minMax];
+  }
 </script>
 
 <svelte:window onkeydown={onkeydown} />
+
+{#snippet displayArrow()}
+  <span>{upOrDown == "asc" ? "⬆️" : "⬇️"}</span>
+{/snippet}
 
 <main class="w-screen">
   <table class="w-full p-12">
     <thead class="m-4 text-center">
       <tr class="m-4 grid grid-cols-4 items-center justify-between text-lg font-black capitalize">
-        <td>Name</td>
+        <td class="flex items-center justify-center gap-3">
+          <button
+            class="cursor-pointer select-none"
+            onclick={() => {
+              changeOrder("name");
+              switchUpDown();
+            }}>Name</button
+          >
+          {#if order[0] === "name"}
+            {@render displayArrow()}
+          {/if}
+        </td>
         <td class="flex flex-col">
           <div>temperature</div>
           <div class="grid grid-cols-2">
             <button
               class="cursor-pointer"
               onclick={() => {
-                order = "temperature-min";
+                changeOrder("temperature", "min");
                 switchUpDown();
-              }}>Min</button
-            >
+              }}
+              >Min
+              {#if order[0] === "temperature" && order[1] === "min"}
+                {@render displayArrow()}
+              {/if}
+            </button>
             <button
               class="cursor-pointer"
               onclick={() => {
-                order = "temperature-max";
+                changeOrder("temperature", "max");
                 switchUpDown();
-              }}>Max</button
-            >
+              }}
+              >Max
+              {#if order[0] === "temperature" && order[1] === "max"}
+                {@render displayArrow()}
+              {/if}
+            </button>
           </div>
         </td>
         <td class="flex flex-col">
@@ -154,25 +173,39 @@
             <button
               class="cursor-pointer"
               onclick={() => {
-                order = "hydration-min";
+                changeOrder("hydration", "min");
                 switchUpDown();
-              }}>Min</button
-            >
+              }}
+              >Min
+              {#if order[0] === "hydration" && order[1] === "min"}
+                {@render displayArrow()}
+              {/if}
+            </button>
             <button
               class="cursor-pointer"
               onclick={() => {
-                order = "hydration-max";
+                changeOrder("hydration", "max");
                 switchUpDown();
-              }}>Max</button
-            >
+              }}
+              >Max
+
+              {#if order[0] === "hydration" && order[1] === "max"}
+                {@render displayArrow()}
+              {/if}
+            </button>
           </div>
         </td>
         <td
+          class="cursor-pointer select-none"
           onclick={() => {
-            order = "nutrient";
+            order = ["nutrient", null];
             switchUpDown();
-          }}>Nutrient</td
-        >
+          }}
+          >Nutrient
+          {#if order[0] === "nutrient"}
+            {@render displayArrow()}
+          {/if}
+        </td>
       </tr>
     </thead>
     <tbody class="m-4">
