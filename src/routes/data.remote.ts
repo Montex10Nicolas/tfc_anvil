@@ -8,7 +8,7 @@ import {
   worldDB,
   type ItemDBSelect,
 } from "$lib/server/db/schema";
-import { error, invalid } from "@sveltejs/kit";
+import { invalid } from "@sveltejs/kit";
 import { and, asc, eq } from "drizzle-orm";
 import * as v from "valibot";
 
@@ -79,7 +79,7 @@ export const createWorld = form(
   v.object({ name: v.pipe(v.string(), v.minLength(1)) }),
   async ({ name }) => {
     await db.insert(worldDB).values({ name: name });
-    getWorlds().refresh();
+    await getWorlds().refresh();
   },
 );
 
@@ -125,6 +125,11 @@ export const createItem = command(
     });
   },
 );
+
+export const removeWorld = form(v.object({ worldId: v.string() }), async ({ worldId }) => {
+  await db.delete(worldDB).where(eq(worldDB.id, worldId));
+  await getWorlds().refresh();
+})
 
 export const removeItem = command(v.string(), async (itemID) => {
   const items = await db.delete(itemDB).where(eq(itemDB.id, itemID)).returning();
@@ -190,7 +195,6 @@ export const createAlloyDB = form(
     ingredients: v.pipe(v.array(alloyIngVB), v.minLength(2)),
   }),
   async ({ name, ingredients }, issue) => {
-    console.table(ingredients);
     const isInvalid = ingredients.filter((ingredient) => {
       if (ingredient.max < ingredient.min) return ingredient;
     }).length;

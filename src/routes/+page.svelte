@@ -48,8 +48,8 @@
   );
 
   const possibility = [-3, -6, -9, -15, 2, 7, 13, 16] as const;
-  const worldQuery = await getWorlds();
-  const metalQuery = await getMetals();
+  const worldQuery = $derived(await getWorlds());
+  const metalQuery = $derived(await getMetals());
   const inputItems = await getInputItems();
 
   let queue: number[] = $state([]);
@@ -229,12 +229,9 @@
 
   onMount(() => {
     if (params.world) {
-      console.log("I'm inside if", params.world);
       localStorage.setItem(LOCAL_STORAGE_KEY.world, params.world);
     } else {
-      console.log("In the else", params.world);
       const localWorld = localStorage.getItem(LOCAL_STORAGE_KEY.world);
-      console.log(localWorld, "local");
       if (localWorld === null) return;
       params.world = localWorld;
     }
