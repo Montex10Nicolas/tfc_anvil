@@ -12,6 +12,11 @@
   import * as v from "valibot";
   import { onClickOutside } from "runed";
   import type { Attachment } from "svelte/attachments";
+  import { onMount } from "svelte";
+
+  const LOCAL_STORAGE_KEY = {
+    world: "world",
+  };
 
   let modal = $state<HTMLElement>()!;
   onClickOutside(
@@ -59,9 +64,7 @@
     thirdLast: 0,
   });
 
-  let worldValue = $state(
-    params.world.length ? params.world : worldQuery.length ? worldQuery[0].name : "",
-  );
+  let worldValue = $derived(params.world);
 
   let metalValue = $state(params.metal);
   let inputItem = $state(params.inputName);
@@ -223,6 +226,19 @@
       input.focus();
     }
   };
+
+  onMount(() => {
+    if (params.world) {
+      console.log("I'm inside if", params.world);
+      localStorage.setItem(LOCAL_STORAGE_KEY.world, params.world);
+    } else {
+      console.log("In the else", params.world);
+      const localWorld = localStorage.getItem(LOCAL_STORAGE_KEY.world);
+      console.log(localWorld, "local");
+      if (localWorld === null) return;
+      params.world = localWorld;
+    }
+  });
 </script>
 
 <svelte:window
@@ -302,7 +318,19 @@
       {#if worldQuery}
         <label class="flex flex-col">
           World:
-          <select class="cursor-pointer rounded" bind:value={worldValue} placeholder="World">
+          <select
+            class="cursor-pointer rounded"
+            bind:value={
+              () => worldValue,
+              (v) => {
+                if (v !== "new_one") {
+                  localStorage!.setItem(LOCAL_STORAGE_KEY.world, v);
+                }
+                worldValue = v;
+              }
+            }
+            placeholder="World"
+          >
             {#each worldQuery as { id, name } (id)}
               <option value={name}>{name}</option>
             {/each}
