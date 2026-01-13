@@ -222,7 +222,6 @@
     inputItemName,
     metal_id,
     path,
-    world_id,
     lastAction,
     secondAction,
     thirdAction,
@@ -392,7 +391,7 @@
     : ''}"
 >
   <div class="m-4 flex items-center justify-between">
-    <a href={resolve(`/world/${world_id}`)}>
+    <a href={resolve("/world/[world_id]", { world_id })}>
       <h1 class="cursor-pointer font-semibold text-violet-300">⬅️ Go back to metal selection</h1>
     </a>
     <h2 class="text-2xl font-bold text-white">{metalName}</h2>
@@ -503,7 +502,6 @@
           {#each grouppedItems as item, index (`groupped-${item.id}-${index}`)}
             {@render displayItem({ item, index })}
           {/each}
-          <!-- eslint-disable-next-line -->
           <a href="/?world={world_id}&metal={metal_id}&inputName={value.name}">
             <div
               class="relative flex h-full items-center gap-2 rounded-2xl border bg-sky-300 p-6 shadow-2xl"

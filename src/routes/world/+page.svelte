@@ -11,7 +11,11 @@
 
   onMount(() => {
     if (worlds.length === 0) {
-      goto(resolve(`/world/${worlds[0].name}`));
+      goto(
+        resolve("/world/[world_id]", {
+          world_id: worlds[0].name,
+        }),
+      );
     }
   });
 </script>
@@ -68,7 +72,11 @@
             </button>
           </div>
         {/if}
-        <a href={resolve(`/world/${name}`)}>
+        <a
+          href={resolve("/world/[world_id]", {
+            world_id: name,
+          })}
+        >
           <div
             role="button"
             tabindex="0"

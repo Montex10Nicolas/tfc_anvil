@@ -39,8 +39,6 @@
 
   const order: [Order, TypeMinOrMax] = $derived([params.sortBy, params.minOrMax]);
   const upOrDown: TypeUpOrDown = $derived(params.upOrDown);
-  $inspect(order);
-  $inspect(upOrDown);
 
   let filter = $state("");
 

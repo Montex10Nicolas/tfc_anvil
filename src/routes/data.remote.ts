@@ -129,7 +129,7 @@ export const createItem = command(
 export const removeWorld = form(v.object({ worldId: v.string() }), async ({ worldId }) => {
   await db.delete(worldDB).where(eq(worldDB.id, worldId));
   await getWorlds().refresh();
-})
+});
 
 export const removeItem = command(v.string(), async (itemID) => {
   const items = await db.delete(itemDB).where(eq(itemDB.id, itemID)).returning();
