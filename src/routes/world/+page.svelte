@@ -56,16 +56,18 @@
   <div class="grid gap-4 grid-cols-{worlds.length > 2 ? 2 : worlds.length}">
     {#each worlds as { name, id }, index (id)}
       <div class="relative">
-        <div class="absolute top-2 right-3 z-90 text-xl">
-          <button
-            onclick={() => {
-              confirmDelete = index;
-            }}
-            class="cursor-pointer"
-          >
-            ❌
-          </button>
-        </div>
+        {#if displayRemoveButton === index}
+          <div class="absolute top-2 right-3 z-90 text-xl">
+            <button
+              onclick={() => {
+                confirmDelete = index;
+              }}
+              class="cursor-pointer"
+            >
+              ❌
+            </button>
+          </div>
+        {/if}
         <a href={resolve(`/world/${name}`)}>
           <div
             role="button"
