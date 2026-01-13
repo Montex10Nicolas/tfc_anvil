@@ -37,5 +37,6 @@ export default defineConfig(
         svelteConfig,
       },
     },
+    rules: { "svelte/no-navigation-without-resolve": "warn" },
   },
 );
