@@ -1,14 +1,7 @@
 <script lang="ts">
   import * as crop from "$lib/jsons/crops.json";
-
-  type Order =
-    | "none"
-    | "name"
-    | "temperature"
-    | "temperature"
-    | "hydration"
-    | "hydration"
-    | "nutrient";
+  import { useSearchParams } from "runed/kit";
+  import * as v from "valibot";
 
   interface Crop {
     name: string;
@@ -24,8 +17,30 @@
   }
   const { crops } = crop as { crops: Crop[] };
 
-  let order: [Order, "min" | "max" | null] = $state(["none", null]);
-  let upOrDown: "asc" | "desc" = $state("asc");
+  const ValiSortBy = v.fallback(
+    v.nullable(v.picklist(["none", "name", "temperature", "hydration", "nutrient"])),
+    null,
+  );
+  type Order = v.InferOutput<typeof ValiSortBy>;
+
+  const ValiMinOrMax = v.fallback(v.nullable(v.picklist(["min", "max"])), null);
+  type TypeMinOrMax = v.InferOutput<typeof ValiMinOrMax>;
+
+  const ValiUpOrDown = v.fallback(v.nullable(v.picklist(["asc", "desc"])), null);
+  type TypeUpOrDown = v.InferOutput<typeof ValiUpOrDown>;
+
+  const params = useSearchParams(
+    v.object({
+      sortBy: ValiSortBy,
+      minOrMax: ValiMinOrMax,
+      upOrDown: ValiUpOrDown,
+    }),
+  );
+
+  const order: [Order, TypeMinOrMax] = $derived([params.sortBy, params.minOrMax]);
+  const upOrDown: TypeUpOrDown = $derived(params.upOrDown);
+  $inspect(order);
+  $inspect(upOrDown);
 
   let filter = $state("");
 
@@ -48,7 +63,7 @@
       if (key === "name" || key === "nutrient") {
         aValue = aCrop[key];
         bValue = bCrop[key];
-      } else if (minMax !== null) {
+      } else if (minMax !== null && key && minMax) {
         aValue = aCrop[key][minMax];
         bValue = bCrop[key][minMax];
       } else {
@@ -70,10 +85,6 @@
 
     return filtered;
   });
-
-  function switchUpDown() {
-    upOrDown = upOrDown === "asc" ? "desc" : "asc";
-  }
 
   function onkeydown(
     event: KeyboardEvent & {
@@ -106,15 +117,19 @@
   }
 
   function changeOrder(newOrder: Order, minMax: "min" | "max" | null = null) {
-    if (order[0] !== newOrder) {
-      upOrDown = "desc";
-    } else {
-      if (upOrDown === "desc") {
-        order = ["none", null];
-        return;
-      }
+    if (newOrder === order[0] && upOrDown === "asc") {
+      params.update({
+        sortBy: "none",
+        minOrMax: null,
+        upOrDown: null,
+      });
+      return;
     }
-    order = [newOrder, minMax];
+    params.update({
+      sortBy: newOrder,
+      minOrMax: minMax,
+    });
+    params.upOrDown = upOrDown === null ? "desc" : upOrDown === "desc" ? "asc" : null;
   }
 </script>
 
@@ -133,7 +148,6 @@
             class="cursor-pointer select-none"
             onclick={() => {
               changeOrder("name");
-              switchUpDown();
             }}>Name</button
           >
           {#if order[0] === "name"}
@@ -147,7 +161,6 @@
               class="cursor-pointer"
               onclick={() => {
                 changeOrder("temperature", "min");
-                switchUpDown();
               }}
               >Min
               {#if order[0] === "temperature" && order[1] === "min"}
@@ -158,7 +171,6 @@
               class="cursor-pointer"
               onclick={() => {
                 changeOrder("temperature", "max");
-                switchUpDown();
               }}
               >Max
               {#if order[0] === "temperature" && order[1] === "max"}
@@ -174,7 +186,6 @@
               class="cursor-pointer"
               onclick={() => {
                 changeOrder("hydration", "min");
-                switchUpDown();
               }}
               >Min
               {#if order[0] === "hydration" && order[1] === "min"}
@@ -185,7 +196,6 @@
               class="cursor-pointer"
               onclick={() => {
                 changeOrder("hydration", "max");
-                switchUpDown();
               }}
               >Max
 
@@ -198,8 +208,7 @@
         <td
           class="cursor-pointer select-none"
           onclick={() => {
-            order = ["nutrient", null];
-            switchUpDown();
+            changeOrder("nutrient", null);
           }}
           >Nutrient
           {#if order[0] === "nutrient"}
